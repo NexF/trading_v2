@@ -90,3 +90,8 @@ class BasePosition:
     # 获取当日盈亏率
     def TodayProfitRate(self):
         raise NotImplementedError("TodayProfitRate is not implemented")
+
+    # 设置账户初始可用资金
+    # 仅供回测使用
+    def SetInitialAvailableCash(self, cash: float):
+        raise NotImplementedError("SetInitialAvailableCash is not implemented")

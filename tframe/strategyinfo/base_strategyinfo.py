@@ -6,10 +6,12 @@ class BaseStrategyInfo:
         pass
 
     # 设置策略开始时间
+    # 仅供回测使用
     def SetStrategyStartTime(self, start_time: datetime):
         raise NotImplementedError("SetStrategyStartTime is not implemented")
 
     # 设置策略结束时间
+    # 仅供回测使用
     def SetStrategyEndTime(self, end_time: datetime):
         raise NotImplementedError("SetStrategyEndTime is not implemented")
 
@@ -21,10 +23,6 @@ class BaseStrategyInfo:
     def SetStrategyFrequency(self, frequency: str):
         raise NotImplementedError("SetStrategyFrequency is not implemented")
     
-    # 设置策略初始资金,资金四舍五入到分
-    def SetStrategyInitialCash(self, cash: float):
-        raise NotImplementedError("SetStrategyInitialCash is not implemented")
-    
     # 设置策略基准指数
     def SetStrategyBenchmarkIndex(self, index: str):
         raise NotImplementedError("SetStrategyBenchmarkIndex is not implemented")
@@ -34,6 +32,7 @@ class BaseStrategyInfo:
         raise NotImplementedError("GetStrategyStartTime is not implemented")
 
     # 获取策略结束时间
+    # 仅供回测使用
     def GetStrategyEndTime(self):
         raise NotImplementedError("GetStrategyEndTime is not implemented")
 
