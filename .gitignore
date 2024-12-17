@@ -1,8 +1,56 @@
-# 忽略pycache 文件夹
-__pycache__/*
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# 忽略tar文件
-*.tar
+# 虚拟环境
+venv/
+ENV/
+env/
+.env
+.venv
 
-# 忽略vscode配置
+# IDE
 /.vscode
+.idea/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志和数据文件
+*.log
+*.sqlite
+*.db
+*.tar
+*.gz
+*.zip
+
+# 临时文件
+tmp/
+temp/
+.pytest_cache/
+.coverage
+htmlcov/
