@@ -1,9 +1,9 @@
 import logging
 import json
-import common.eastmoney_common as common
+import tframe.common.eastmoney_common as common
 from lxml import etree
-from accontinfo.base_accontinfo import BaseAccountInfo, BasePosition
-from session.eastmoney_session import EastMoneySession
+from tframe.accontinfo.base_accontinfo import BaseAccountInfo, BasePosition
+from tframe.session.eastmoney_session import EastMoneySession
 
 # 获取东财账户信息的类
 class EastMoneyAccountInfo(BaseAccountInfo):
@@ -11,7 +11,6 @@ class EastMoneyAccountInfo(BaseAccountInfo):
     __kAccountInfoUrl = "https://jywg.eastmoneysec.com/Com/queryAssetAndPositionV1"
     # 东财validatekey获取api地址，这个地址今后可以改变
     __kValidateKeyUrl = "https://jywg.eastmoneysec.com/Search/Position"
-
 
     # 初始化
     def __init__(self, user, passwd):

@@ -8,39 +8,39 @@ class BaseAccountInfo:
 
     # 更新登录状态
     def UpdateLogin(self):
-        pass
+        raise NotImplementedError("UpdateLogin is not implemented")
     
     # 获取账户可用资金
     def AvailableCash(self):
-        pass
+        raise NotImplementedError("AvailableCash is not implemented")
 
     # 获取账户持仓市值
     def PositionMarketValue(self):
-        pass
+        raise NotImplementedError("PositionMarketValue is not implemented")
 
     # 获取账户总资产
     def TotalValue(self):
-        pass
+        raise NotImplementedError("TotalValue is not implemented")
 
     # 获取账户持仓
     def Position(self):
-        pass
+        raise NotImplementedError("Position is not implemented")
     
     # 获取账户冻结资金
     def FrozenCash(self):
-        pass
+        raise NotImplementedError("FrozenCash is not implemented")
 
     # 获取账户当日盈亏
     def TodayProfit(self):
-        pass
+        raise NotImplementedError("TodayProfit is not implemented")
     
     # 获取账户持仓盈亏
     def PositionProfit(self):
-        pass
+        raise NotImplementedError("PositionProfit is not implemented")
 
     # 获取账户总收益率
     def TotalReturnRate(self):
-        pass
+        raise NotImplementedError("TotalReturnRate is not implemented")
 
 # 持仓基类
 class BasePosition:
@@ -49,44 +49,44 @@ class BasePosition:
 
     # 获取证券代码
     def StockId(self):
-        pass
+        raise NotImplementedError("StockId is not implemented")
 
     # 获取证券名称
     def StockName(self):
-        pass
+        raise NotImplementedError("StockName is not implemented")
 
     # 获取持仓数量
     def Amount(self):
-        pass
+        raise NotImplementedError("Amount is not implemented")
 
     # 获取可卖数量
     def SellableAmount(self):
-        pass
+        raise NotImplementedError("SellableAmount is not implemented")
 
     # 获取成本价
     def CostPrice(self):
-        pass
+        raise NotImplementedError("CostPrice is not implemented")
 
     # 获取当前价
     def CurrentPrice(self):
-        pass
+        raise NotImplementedError("CurrentPrice is not implemented")
 
     # 获取当前市值
     def MarketValue(self):
-        pass
+        raise NotImplementedError("MarketValue is not implemented")
 
     # 获取持仓盈亏
     def Profit(self):
-        pass
+        raise NotImplementedError("Profit is not implemented")
 
     # 获取持仓盈亏率
     def ProfitRate(self):
-        pass
+        raise NotImplementedError("ProfitRate is not implemented")
 
     # 获取当日盈亏
     def TodayProfit(self):
-        pass
+        raise NotImplementedError("TodayProfit is not implemented")
 
     # 获取当日盈亏率
     def TodayProfitRate(self):
-        pass
+        raise NotImplementedError("TodayProfitRate is not implemented")

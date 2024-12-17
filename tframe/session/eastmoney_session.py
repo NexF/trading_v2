@@ -3,7 +3,7 @@ import json
 from pyppeteer import launch
 import logging
 import ddddocr
-from base_session import BaseSession
+from tframe.session.base_session import BaseSession
 """
 初次安装pypeteer需要安装chromium依赖，可以看看
 ldd ~/.local/share/pyppeteer/local-chromium/588429/chrome-linux/chrome | grep 'not found'
@@ -21,9 +21,9 @@ class EastMoneySession(BaseSession):
         browser = await launch(options={'args': ['--no-sandbox', "--window-size=1920,1080"]})
         page = await browser.newPage()
         await page.setViewport({"width":1920,"height":1080})    # 页面长度，页面宽度
-        await page.goto(self.url)  # 转到login
-        await page.type('#txtZjzh',self.user)              # 设置账户，selector可以通过chrome开发者模式右键获取
-        await page.type('#txtPwd',self.passwd)                     # 设置密码
+        await page.goto(self.url)                               # 转到login
+        await page.type('#txtZjzh',self.user)                   # 设置账户，selector可以通过chrome开发者模式右键获取
+        await page.type('#txtPwd',self.passwd)                  # 设置密码
         VaildImg = await page.xpath('//*[@id="imgValidCode"]')  # 得到验证码对象，通过xpath
         await VaildImg[0].screenshot({'path': 'yzm.png'})       # 验证码对象截图
         await page.click('#rdsc45')                             # 登录时长设为3小时

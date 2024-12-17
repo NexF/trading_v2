@@ -6,4 +6,4 @@ class BaseSession:
         self.passwd = passwd
     
     def get_session(self):
-        pass
+        raise NotImplementedError("get_session is not implemented")
