@@ -1,0 +1,8 @@
+# 忽略pycache 文件夹
+__pycache__/*
+
+# 忽略tar文件
+*.tar
+
+# 忽略vscode配置
+/.vscode
