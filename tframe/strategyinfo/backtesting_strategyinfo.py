@@ -1,22 +1,22 @@
 from datetime import datetime
+from typing import Optional
+
 import tframe.strategyinfo.base_strategyinfo as base_strategyinfo
+
 
 # 回测策略信息类
 class BacktestingStrategyInfo(base_strategyinfo.BaseStrategyInfo):
-    # 策略开始时间
-    __strategy_start_time: datetime = None
-    # 策略结束时间
-    __strategy_end_time: datetime = None
-    # 策略名称
-    __strategy_name: str = None
-    # 策略频率
-    __strategy_frequency: str = None
-    # 策略基准指数
-    __strategy_benchmark_index: str = None
-
-
     def __init__(self):
-        pass
+        # 策略开始时间
+        self.__strategy_start_time: Optional[datetime] = None
+        # 策略结束时间
+        self.__strategy_end_time: Optional[datetime] = None
+        # 策略名称
+        self.__strategy_name: Optional[str] = None
+        # 策略频率
+        self.__strategy_frequency: Optional[str] = None
+        # 策略基准指数
+        self.__strategy_benchmark_index: Optional[str] = None
 
     # 设置策略开始时间
     # 仅供回测使用
@@ -31,11 +31,11 @@ class BacktestingStrategyInfo(base_strategyinfo.BaseStrategyInfo):
     # 设置策略名称
     def SetStrategyName(self, name: str):
         self.__strategy_name = name
-    
+
     # 设置策略频率
     def SetStrategyFrequency(self, frequency: str):
         self.__strategy_frequency = frequency
-    
+
     # 设置策略基准指数
     def SetStrategyBenchmarkIndex(self, index: str):
         self.__strategy_benchmark_index = index

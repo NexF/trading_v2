@@ -1,5 +1,3 @@
-import logging
-
 # 账户信息基类
 class BaseAccountInfo:
     def __init__(self, user, passwd):
@@ -9,7 +7,7 @@ class BaseAccountInfo:
     # 更新登录状态
     def UpdateLogin(self):
         raise NotImplementedError("UpdateLogin is not implemented")
-    
+
     # 获取账户可用资金
     def AvailableCash(self):
         raise NotImplementedError("AvailableCash is not implemented")
@@ -25,7 +23,7 @@ class BaseAccountInfo:
     # 获取账户持仓
     def Position(self):
         raise NotImplementedError("Position is not implemented")
-    
+
     # 获取账户冻结资金
     def FrozenCash(self):
         raise NotImplementedError("FrozenCash is not implemented")
@@ -33,7 +31,7 @@ class BaseAccountInfo:
     # 获取账户当日盈亏
     def TodayProfit(self):
         raise NotImplementedError("TodayProfit is not implemented")
-    
+
     # 获取账户持仓盈亏
     def PositionProfit(self):
         raise NotImplementedError("PositionProfit is not implemented")
@@ -41,6 +39,7 @@ class BaseAccountInfo:
     # 获取账户总收益率
     def TotalReturnRate(self):
         raise NotImplementedError("TotalReturnRate is not implemented")
+
 
 # 持仓基类
 class BasePosition:
