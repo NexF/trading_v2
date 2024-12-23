@@ -47,6 +47,10 @@ Thumbs.db
 *.tar
 *.gz
 *.zip
+log.txt
+
+# 配置文件
+local.cfg
 
 # 临时文件
 tmp/

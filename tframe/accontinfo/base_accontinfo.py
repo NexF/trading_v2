@@ -6,6 +6,9 @@ class BaseAccountInfo:
         self.user = user
         self.passwd = passwd
 
+    def __init__(self):
+        pass
+    
     # 更新登录状态
     def UpdateLogin(self):
         raise NotImplementedError("UpdateLogin is not implemented")

@@ -1,16 +1,36 @@
 import tframe.tframe as tframe
+from tframe.accontinfo.eastmoney_accontinfo import EastMoneyAccontInfo
+from tframe.strategyinfo.backtesting_strategyinfo import BacktestingStrategyInfo
+from tframe.strategyinfo.forwardtesting_strategyinfo import ForwardTestingStrategyInfo
 
 class TContextFactory:
-    # tcontext字典
-    __tcontext_dict: dict = {}
+    # 预定义的配置映射
+    __CONFIG_MAP = {
+        "base_backtest": (EastMoneyAccontInfo, BacktestingStrategyInfo),
+        "eastmoney_forward": (EastMoneyAccontInfo, ForwardTestingStrategyInfo),
+        # 可以继续添加其他组合...
+    }
 
-    # 注册tcontext
     @staticmethod
-    def register_tcontext(tcontext_name: str, tcontext_session: type, tcontext_strategyinfo: type):
-        TContextFactory.__tcontext_dict[tcontext_name] = (tcontext_session, tcontext_strategyinfo)
-    
-    @staticmethod
-    def create_tcontext(tcontext_name: str) -> tframe.TContext:
-        tcontext_session, tcontext_strategyinfo = TContextFactory.__tcontext_dict[tcontext_name]
-        return tframe.TContext(tcontext_session, tcontext_strategyinfo)
+    def CreateTContext(config_text: str) -> tframe.TContext:
+        """
+        根据配置文本创建TContext
+        :param config_text: 配置文本，如 "eastmoney_backtest"
+        :param user: 用户名（如果需要）
+        :param passwd: 密码（如果需要）
+        :return: TContext实例
+        """
+        if config_text not in TContextFactory.__CONFIG_MAP:
+            raise ValueError(f"Unknown config: {config_text}")
+        
+        accontinfo_class, strategyinfo_class = TContextFactory.__CONFIG_MAP[config_text]
+        
+        # 创建accontinfo实例
+        accontinfo = accontinfo_class()
+            
+        # 创建strategyinfo实例
+        strategyinfo = strategyinfo_class()
+        
+        # 返回组装好的TContext
+        return tframe.TContext(accontinfo, strategyinfo)
 
