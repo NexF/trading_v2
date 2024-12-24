@@ -35,8 +35,9 @@ def create_table(conn, table_name):
             close DECIMAL(8, 3),
             volume INT,
             amount DECIMAL(16, 3),
-            PRIMARY KEY (date, time),
-            INDEX idx_date_time (date, time)
+            timestamp TIMESTAMP AS (TIMESTAMP(date, time)) STORED,
+            PRIMARY KEY (timestamp),
+            ADD INDEX idx_timestamp_date_time (timestamp, date, time)
         )
     """)
 
@@ -85,10 +86,10 @@ def process_file(conn, file_path, table_name):
     df.to_csv(temp_file, index=False, header=False, sep='\t')
     
     with optimized_bulk_insert(conn) as cursor:
-        # 使用LOAD DATA INFILE
+        # 使用LOAD DATA INFILE，添加 REPLACE 关键字以覆盖重复数据
         load_data_sql = f"""
             LOAD DATA LOCAL INFILE %s
-            INTO TABLE `{table_name}`
+            REPLACE INTO TABLE `{table_name}`
             FIELDS TERMINATED BY '\t'
             LINES TERMINATED BY '\n'
             (@date, @time, @open, @high, @low, @close, @volume, @amount)

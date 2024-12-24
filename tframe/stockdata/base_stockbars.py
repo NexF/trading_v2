@@ -7,36 +7,30 @@ class StockBars:
     def __init__(self):
         # 使用DataFrame存储多行数据
         self.__data = pd.DataFrame(columns=[
-            'datetime',
+            'date',
+            'time',
             'open',
             'high',
             'low',
             'close',
             'volume',
-            'amount'
+            'amount',
+            'timestamp'
         ]).astype({
-            'datetime': 'datetime64[ns]',
+            'date': 'datetime64[ns]',
+            'time': 'datetime64[ns]',
             'open': 'float64',
             'high': 'float64',
             'low': 'float64',
             'close': 'float64',
             'volume': 'int64',
-            'amount': 'float64'
+            'amount': 'float64',
+            'timestamp': 'datetime64[ns]'
         })
-        # 设置datetime作为索引
-        self.__data.set_index('datetime', inplace=True)
-
-    def append(self, bar_dict: dict):
-        """添加一行数据"""
-        self.__data.loc[bar_dict['datetime']] = {
-            'open': bar_dict['open'],
-            'high': bar_dict['high'],
-            'low': bar_dict['low'],
-            'close': bar_dict['close'],
-            'volume': bar_dict['volume'],
-            'amount': bar_dict['amount']
-        }
-
+        # 设置date，time，timestamp作为索引, 同时按 timestamp 倒序
+        self.__data.set_index(['date', 'time', 'timestamp'], inplace=True)
+        self.__data.sort_index(ascending=False, inplace=True)
+        
     def get_dataframe(self, copy: bool = True) -> pd.DataFrame:
         """
         获取DataFrame
@@ -46,6 +40,10 @@ class StockBars:
         """
         return self.__data.copy() if copy else self.__data
 
+    def set_dataframe(self, df: pd.DataFrame):
+        """设置DataFrame"""
+        self.__data = df
+
     def get_bars(self, start_time: datetime = None, end_time: datetime = None) -> pd.DataFrame:
         """获取指定时间范围的数据"""
         if start_time is None and end_time is None:
@@ -53,11 +51,34 @@ class StockBars:
         
         mask = pd.Series(True, index=self.__data.index)
         if start_time is not None:
-            mask &= (self.__data.index >= start_time)
+            mask &= (self.__data.index.get_level_values('timestamp') >= start_time)
         if end_time is not None:
-            mask &= (self.__data.index <= end_time)
+            mask &= (self.__data.index.get_level_values('timestamp') <= end_time)
         return self.__data[mask]
 
+    def get_bars(self, bar_count: int = 1000, end_time: datetime = None) -> pd.DataFrame:
+        """
+            获取指定数量或时间范围的数据
+            如果end_time为None，则从最新数据开始向前获取bar_count条数据
+        """
+        if end_time is None:
+            return self.__data.iloc[-bar_count:]
+        else:
+            # 从endtime往前获取bar_count条数据
+            return self.__data.loc[self.__data.index.get_level_values('timestamp') <= end_time].iloc[-bar_count:]
+        
+    def get_bars(self, bar_count: int = 1000, start_time: datetime = None) -> pd.DataFrame:
+        """
+            获取指定数量或时间范围的数据
+            如果start_time为None，则从最老数据开始向后获取bar_count条数据
+        """
+        if start_time is None:
+            return self.__data.iloc[:bar_count]
+        else:
+            # 从start_time往后获取bar_count条数据
+            return self.__data.loc[self.__data.index.get_level_values('timestamp') >= start_time].iloc[:bar_count]
+        
+        
     # 常用数据访问方法
     def get_latest_bar(self) -> dict:
         """获取最新的一条数据"""

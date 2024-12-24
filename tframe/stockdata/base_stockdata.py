@@ -8,27 +8,27 @@ class BaseSingleStockData:
         pass
     
     # 获取1分钟级别数据
-    def Get1MinBar(self, start_time: datetime = None, end_time: datetime = None) -> StockBars:
+    def Get1MinBars(self, start_time: datetime = None, end_time: datetime = None) -> StockBars:
         raise NotImplementedError("Get1MinBar is not implemented")
 
     # 获取1分钟级别数据
-    def Get1MinBar(self, start_time: datetime, bar_count: int = 1000) -> StockBars:
+    def Get1MinBars(self, start_time: datetime, bar_count: int = 1000) -> StockBars:
         raise NotImplementedError("Get1MinBar is not implemented")
     
     # 获取1分钟级别数据
-    def Get1MinBar(self, bar_count: int = 1000, end_time: datetime = None) -> StockBars:
+    def Get1MinBars(self, bar_count: int = 1000, end_time: datetime = None) -> StockBars:
         raise NotImplementedError("Get1MinBar is not implemented")
     
     # 获取1天级别数据
-    def Get1DayBar(self, start_time: datetime = None, end_time: datetime = None) -> StockBars:
+    def Get1DayBars(self, start_time: datetime = None, end_time: datetime = None) -> StockBars:
         raise NotImplementedError("Get1DayBar is not implemented")
 
     # 获取1天级别数据
-    def Get1DayBar(self, start_time: datetime = None, bar_count: int = 1000) -> StockBars:
+    def Get1DayBars(self, start_time: datetime = None, bar_count: int = 1000) -> StockBars:
         raise NotImplementedError("Get1DayBar is not implemented")
 
     # 获取1天级别数据
-    def Get1DayBar(self, bar_count: int = 1000, end_time: datetime = None) -> StockBars:
+    def Get1DayBars(self, bar_count: int = 1000, end_time: datetime = None) -> StockBars:
         raise NotImplementedError("Get1DayBar is not implemented")
 
     
