@@ -48,6 +48,7 @@ Thumbs.db
 *.gz
 *.zip
 log.txt
+nohup.out
 
 # 配置文件
 local.cfg

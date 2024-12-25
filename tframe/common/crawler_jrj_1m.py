@@ -1,4 +1,5 @@
 import requests
+import logging
 import pandas as pd
 from typing import Optional
 import tframe.common.eastmoney_common as common
@@ -21,7 +22,7 @@ def fetch_jrj_1m_data(security_id: str, begin_date: str) -> Optional[pd.DataFram
     elif security_id[-2:] == "SH":
         security_id = f"1{security_id[:-3]}"
     else:
-        print(f"Invalid security_id: {security_id}")
+        logging.error(f"Invalid security_id: {security_id}")
         return
     
     url = f"https://gateway.jrj.com/quot-kline"
@@ -38,11 +39,13 @@ def fetch_jrj_1m_data(security_id: str, begin_date: str) -> Optional[pd.DataFram
         data = resp.json()
         
         if data["retcode"] != 0:
-            print(f"获取数据失败: {data['msg']}")
+            logging.error(f"获取数据失败: {data['msg']}")
             return None
             
         klines = data["data"]["kline"]
-        
+        if len(klines) == 0:
+            logging.error(f"获取数据失败: data[{data['msg']}], begin_date[{begin_date}]")
+            return None
         # 转换为DataFrame
         df = pd.DataFrame(klines)
         
@@ -73,7 +76,7 @@ def fetch_jrj_1m_data(security_id: str, begin_date: str) -> Optional[pd.DataFram
         return df
         
     except Exception as e:
-        print(f"获取数据出错: {str(e)}")
+        logging.error(f"获取数据出错: {str(e)}")
         return None
     
 # 新建 sql 数据表
@@ -90,6 +93,7 @@ def create_table(conn, table_name):
     # pre_close: 前收盘价【除权价，前复权】
     # volume: 成交量
     # amount: 成交额
+    # timestamp: 时间戳
     cursor.execute(f"""
         CREATE TABLE IF NOT EXISTS `{table_name}` (
             date DATE,
@@ -102,7 +106,7 @@ def create_table(conn, table_name):
             amount DECIMAL(16, 3),
             timestamp TIMESTAMP AS (TIMESTAMP(date, time)) STORED,
             PRIMARY KEY (timestamp),
-            ADD INDEX idx_timestamp_date_time (timestamp, date, time)
+            INDEX idx_timestamp_date_time (timestamp, date, time)
         )
     """)
 
@@ -143,10 +147,10 @@ def save_to_db(df: pd.DataFrame, table_name: str):
         cursor.executemany(insert_sql, values)
         conn.commit()
         
-        print(f"成功保存 {len(values)} 条记录")
+        logging.info(f"成功保存 {len(values)} 条记录")
         
     except Exception as e:
-        print(f"保存数据出错: {str(e)}")
+        logging.error(f"保存数据出错: {str(e)}")
         conn.rollback()
         
     finally:

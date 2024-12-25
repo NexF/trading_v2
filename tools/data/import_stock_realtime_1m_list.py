@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # 读取tframe_stock_1d.stock_realtime_list表
     conn = mysql.connector.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_DATABASE)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT code FROM stock_realtime_list WHERE volume > 0")
+    cursor.execute(f"SELECT DISTINCT code FROM stock_realtime_list WHERE volume > 0 and date = {date}")
     security_ids = [row[0] for row in cursor.fetchall()]
     cursor.close()
     conn.close()

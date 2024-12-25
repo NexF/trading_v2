@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime
-from mysql.connector import Connection
+from mysql.connector.connection import MySQLConnection as Connection
 
 # 股票Bar数据基类
 class StockBars:

@@ -75,9 +75,7 @@ def update_table_structure():
                 cursor.execute(f"""
                     ALTER TABLE `{table}`
                     DROP PRIMARY KEY,
-                    DROP INDEX idx_date_time,
-                    ADD PRIMARY KEY (timestamp),
-                    ADD INDEX idx_timestamp_date_time (timestamp, date, time)
+                    ADD PRIMARY KEY (timestamp)
                 """)
                 conn.commit()
                 print(f"Table {table} updated successfully")
@@ -96,4 +94,4 @@ def update_table_structure():
             conn.close()
             
 if __name__ == "__main__":
-    add_timestamp_to_tables()
+    update_table_structure()
