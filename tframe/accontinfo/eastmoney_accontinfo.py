@@ -2,15 +2,24 @@ import logging
 import json
 import tframe.common.eastmoney_common as common
 from lxml import etree
-from tframe.accontinfo.base_accontinfo import BaseAccountInfo, BasePosition
+from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition, BaseOrder
 from tframe.session.eastmoney_session import EastMoneySession
+from datetime import datetime
+
+class EastMoneyOrder(BaseOrder):
+    def __init__(self, stock_id: str, amount: int, create_time: datetime, order_code: int, price: float = None):
+        super().__init__(stock_id, amount, create_time, price)
+        self.order_code = order_code
+
 
 # 获取东财账户信息的类
-class EastMoneyAccountInfo(BaseAccountInfo):
+class EastMoneyAccount(BaseAccount):
     # 东财账户信息获取api地址
     __kAccountInfoUrl = "https://jywg.eastmoneysec.com/Com/queryAssetAndPositionV1"
     # 东财validatekey获取api地址，这个地址今后可以改变
     __kValidateKeyUrl = "https://jywg.eastmoneysec.com/Search/Position"
+    # 东财下单api地址
+    __kTradeUrl = "https://jywg.eastmoneysec.com/Trade/SubmitTradeV2"
 
     # 初始化
     def __init__(self, user, passwd):
@@ -83,7 +92,68 @@ class EastMoneyAccountInfo(BaseAccountInfo):
     # 获取账户总收益率
     def TotalReturnRate(self):
         return self.TotalValue() / self.__base_total_value
+    
+    def Order(self, stock_id: str, amount: int, price: float = None) -> BaseOrder:
+        stock_code = stock_id[:-3]
+        
+        if stock_id[-2:].upper() == "SH":
+            market = "HA"
+        elif stock_id[-2:].upper() == "SZ":
+            market = "SA"
+        else:
+            raise ValueError(f"stock_id[{stock_id}]格式错误")
+        
+        params = {
+            "stockCode": stock_code,
+            "tradeType": "B" if amount > 0 else "S",
+            "amount": abs(amount),
+            "market": market
+        }
+        # 如果价格为None，则使用当前买1/卖1价格
+        if price is None:
+            if amount > 0:  # 买入
+                price = common.GetFiveQuote(stock_id)['fivequote']['sale1']
+            else:  # 卖出
+                price = common.GetFiveQuote(stock_id)['fivequote']['buy1']
+                
+        params["price"] = price
+        ret_json = common.PostHtml(self.__kTradeUrl,cookies = self.session, params=params)
+        """{"Status":0,"Count":1,"Data":[{"Htxh":"0701195683","Wtbh":"1195683"}],"Errcode":0}"""
+        if ret_json['Errcode'] == 0:
+            return EastMoneyOrder(stock_id, amount, datetime.now(), ret_json['Data'][0]['Wtbh'], price)
+        else:
+            logging.error(f"下单失败，错误信息：{ret_json}")
+            return None
 
+    def OrderByValue(self, stock_id: str, cash_amount: float, price: float = None) -> BaseOrder:
+        if price is None:
+            if cash_amount > 0:  # 买入
+                price = common.GetFiveQuote(stock_id)['fivequote']['sale1']
+            else:  # 卖出
+                price = common.GetFiveQuote(stock_id)['fivequote']['buy1']
+        # 计算数量，100的整数倍，向下取整
+        amount = int(cash_amount / price * 100) * 100
+        if amount == 0:
+            logging.error(f"下单失败：下单数量为 0. 价格[{price}]，金额[{cash_amount}]")
+            return None
+        return self.Order(stock_id, amount, price)
+
+    def OrderByPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
+        if percent < 0 or percent > 1:
+            logging.error(f"下单失败：百分比[{percent}]不在0到1之间")
+            return None
+        
+        return self.OrderByValue(stock_id, self.TotalValue() * percent, price)
+
+    def Rebalance(self, stock_id: str, amount: int, price: float = None) -> BaseOrder:
+        
+        return self.Order(stock_id, amount - self.Position()[stock_id].StockAmount(), price)
+    
+    def RebalanceByValue(self, stock_id: str, cash_amount: float, price: float = None) -> BaseOrder:
+        return self.OrderByValue(stock_id, cash_amount - self.Position()[stock_id].StockAmount(), price)
+    
+    def RebalanceByPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
+        return self.OrderByPercent(stock_id, percent - self.Position()[stock_id].StockAmount(), price)
 
 class EastMoneyPosition(BasePosition):
     def __init__(self, position_json: dict):

@@ -4,34 +4,11 @@ from mysql.connector.connection import MySQLConnection as Connection
 
 # 股票Bar数据基类
 class StockBars:
+    __data: pd.DataFrame
     def __init__(self):
-        # 使用DataFrame存储多行数据
-        self.__data = pd.DataFrame(columns=[
-            'date',
-            'time',
-            'open',
-            'high',
-            'low',
-            'close',
-            'volume',
-            'amount',
-            'timestamp'
-        ]).astype({
-            'date': 'datetime64[ns]',
-            'time': 'datetime64[ns]',
-            'open': 'float64',
-            'high': 'float64',
-            'low': 'float64',
-            'close': 'float64',
-            'volume': 'int64',
-            'amount': 'float64',
-            'timestamp': 'datetime64[ns]'
-        })
-        # 设置date，time，timestamp作为索引, 同时按 timestamp 倒序
-        self.__data.set_index(['date', 'time', 'timestamp'], inplace=True)
-        self.__data.sort_index(ascending=False, inplace=True)
+        pass
         
-    def get_dataframe(self, copy: bool = True) -> pd.DataFrame:
+    def get_dataframe(self, copy: bool = False) -> pd.DataFrame:
         """
         获取DataFrame
         Args:

@@ -58,9 +58,6 @@ class LocalStockData(BaseStockData):
 
         # 创建DataFrame，确保列名与查询结果匹配
         df = pd.DataFrame(data, columns=['date', 'time', 'open', 'high', 'low', 'close', 'volume', 'amount', 'timestamp'])
-        
-        # 重置索引，确保索引是唯一的
-        df = df.reset_index(drop=True)
 
         ret = StockBars()
         ret.set_dataframe(df)
@@ -94,9 +91,6 @@ class LocalStockData(BaseStockData):
 
         # 创建DataFrame，确保列名与查询结果匹配
         df = pd.DataFrame(data, columns=['date', 'time', 'open', 'high', 'low', 'close', 'volume', 'amount', 'timestamp'])
-        
-        # 重置索引，确保索引是唯一的
-        df = df.reset_index(drop=True)
 
         ret = StockBars()
         ret.set_dataframe(df)
@@ -159,6 +153,8 @@ class LocalStockData(BaseStockData):
         df = pd.concat([df, pd.DataFrame(data, columns=['date', 'code', 'open', 'high', 'low', 'close', 'pre_close', 'volume', 'amount', 'adj_factor'])])
         # 只取前bar_count条数据
         df = df.head(bar_count)
+        # 重置索引，确保索引是唯一的
+        df = df.reset_index(drop=True)
         ret = StockBars()
         ret.set_dataframe(df)
         return ret
@@ -243,6 +239,8 @@ class LocalStockData(BaseStockData):
         data = self.cursor_1d.fetchall()
         df = pd.concat([df, pd.DataFrame(data, columns=['date', 'code', 'open', 'high', 'low', 'close', 'pre_close', 'volume', 'amount', 'adj_factor'])])
 
+        # 重置索引，确保索引是唯一的
+        df = df.reset_index(drop=True)
         ret = StockBars()
         ret.set_dataframe(df)
         return ret

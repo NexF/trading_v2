@@ -1,13 +1,13 @@
 import tframe.tframe as tframe
-from tframe.accontinfo.eastmoney_accontinfo import EastMoneyAccontInfo
+from tframe.accontinfo.eastmoney_accontinfo import EastMoneyAccont
 from tframe.strategyinfo.backtesting_strategyinfo import BacktestingStrategyInfo
 from tframe.strategyinfo.forwardtesting_strategyinfo import ForwardTestingStrategyInfo
 
 class TContextFactory:
     # 预定义的配置映射
     __CONFIG_MAP = {
-        "base_backtest": (EastMoneyAccontInfo, BacktestingStrategyInfo),
-        "eastmoney_forward": (EastMoneyAccontInfo, ForwardTestingStrategyInfo),
+        "base_backtest": (EastMoneyAccont, BacktestingStrategyInfo),
+        "eastmoney_forward": (EastMoneyAccont, ForwardTestingStrategyInfo),
         # 可以继续添加其他组合...
     }
 

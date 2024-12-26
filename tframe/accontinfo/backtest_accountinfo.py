@@ -1,6 +1,6 @@
 import logging
 import datetime
-from tframe.accontinfo.base_accontinfo import BaseAccountInfo, BasePosition
+from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition
 
 
 # 持仓类
@@ -86,7 +86,7 @@ class BacktestPosition(BasePosition):
 
 
 # 回测模拟账户信息类
-class BacktestAccountInfo(BaseAccountInfo):
+class BacktestAccount(BaseAccount):
     __available_cash: float
     __initial_available_cash: float
     __positions: dict[str, BacktestPosition]
