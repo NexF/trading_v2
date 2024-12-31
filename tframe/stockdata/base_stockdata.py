@@ -31,7 +31,9 @@ class BaseSingleStockData:
     def Get1DayBars(self, bar_count: int = 1000, end_time: datetime = None) -> StockBars:
         raise NotImplementedError("Get1DayBar is not implemented")
 
-    
+    # 获取当前价格
+    def GetCurrentPrice(self, time: datetime = None) -> float:
+        raise NotImplementedError("GetCurrentPrice is not implemented")
 
 
 # 股票数据获取基类

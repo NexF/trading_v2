@@ -92,6 +92,39 @@ def update_table_structure():
             cursor.close()
         if conn:
             conn.close()
-            
+
+def modify_stock_1d_index():
+    try:
+        # 连接数据库
+        conn = mysql.connector.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database="tframe_stock_1d"
+        )
+        
+        cursor = conn.cursor()
+        
+        # 删除旧索引
+        cursor.execute("ALTER TABLE stock_realtime_list DROP INDEX idx_date_code")
+        
+        # 添加新索引
+        cursor.execute("ALTER TABLE stock_realtime_list ADD INDEX idx_date (date)")
+        cursor.execute("ALTER TABLE stock_realtime_list ADD INDEX idx_code (code)")
+        
+        # 提交更改
+        print("commit")
+        conn.commit()
+        print("Successfully modified indexes for stock_realtime_list table")
+        
+    except Exception as e:
+        print(f"Error modifying indexes: {e}")
+        conn.rollback()
+        
+    finally:
+        cursor.close()
+        conn.close()
+        
 if __name__ == "__main__":
-    update_table_structure()
+    modify_stock_1d_index()

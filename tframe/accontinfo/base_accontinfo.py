@@ -11,41 +11,72 @@ class OrderStatus(Enum):
 
 
 class BaseOrder:
-    status: OrderStatus
-    transaction_cost: float    # 交易费用
-    average_filled_price: float    # 平均成交价格
-    filled_amount: int    # 成交数量
+    
+    _status: OrderStatus
+    _transaction_cost: float    # 交易费用
+    _average_filled_price: float    # 平均成交价格
+    _filled_amount: int    # 成交数量
 
-    stock_id: str # 证券代码
-    amount: int # 下单数量
-    create_time: datetime # 创建时间
-    price: float = None # 限价
+    _stock_id: str # 证券代码
+    _amount: int # 下单数量
+    _create_time: datetime # 创建时间
+    _price: float = None # 限价
     
     def __init__(self, stock_id: str, amount: int, create_time: datetime, price: float = None):
-        self.stock_id = stock_id
-        self.amount = amount
-        self.price = price
-        self.create_time = create_time
-        self.status = OrderStatus.PENDING
-        self.transaction_cost = 0
-        self.average_filled_price = 0
-        self.filled_amount = 0
+        self._stock_id = stock_id
+        self._amount = amount
+        self._price = price
+        self._create_time = create_time
+        self._status = OrderStatus.PENDING
+        self._average_filled_price = 0
+        self._filled_amount = 0
 
     # 成交
     def Fill(self, amount: int, price: float):
-        self.average_filled_price = (self.average_filled_price * self.filled_amount + price * amount) / (self.filled_amount + amount)
-        self.filled_amount += amount
-        if self.filled_amount == self.amount:
-            self.status = OrderStatus.COMPLETED
+        # 先检查 price 是否处于限价内
+        if self._amount > 0:        # 买入
+            if self._price is not None and price > self._price: # 如果当前成交价格高于限价，则无法成交
+                return 0
+        else:                       # 卖出
+            amount = -amount
+            if self._price is not None and price < self._price:
+                return 0 
+        
+        self._average_filled_price = (self._average_filled_price * self._filled_amount + price * amount) / (self._filled_amount + amount)
+        self._filled_amount += amount
+        if abs(self._filled_amount) >= abs(self._amount):
+            self._status = OrderStatus.COMPLETED
+            amount = self._amount - self._filled_amount
+            self._filled_amount = self._amount
         else:
-            self.status = OrderStatus.ACTIVE
-
+            self._status = OrderStatus.ACTIVE
+        return amount
 
     def GetUnfilledAmount(self):
-        return self.amount - self.filled_amount
+        return self._amount - self._filled_amount
 
     
-
+    def GetStatus(self):
+        return self._status
+    
+    def GetAverageFilledPrice(self):
+        return self._average_filled_price
+    
+    def GetFilledAmount(self):
+        return self._filled_amount
+    
+    def GetStockId(self):
+        return self._stock_id
+    
+    def GetAmount(self):
+        return self._amount
+    
+    def GetCreateTime(self):
+        return self._create_time
+    
+    def GetPrice(self):
+        return self._price
+        
 # 账户信息基类
 class BaseAccount:
     def __init__(self, user, passwd):

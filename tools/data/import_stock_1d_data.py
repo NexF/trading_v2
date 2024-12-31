@@ -44,7 +44,8 @@ def create_table(conn, table_name):
             amount DECIMAL(16, 3),
             adj_factor DECIMAL(8, 3),
             PRIMARY KEY (date, code),
-            INDEX idx_date_code (date, code)
+            INDEX idx_date (date),
+            INDEX idx_code (code)
         )
     """)
 

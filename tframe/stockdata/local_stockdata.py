@@ -1,6 +1,6 @@
 import pandas as pd
 import logging
-from base_stockdata import BaseStockData
+from base_stockdata import BaseStockData, BaseSingleStockData
 from base_stockbars import StockBars
 from tframe.common.config_reader import ConfigReader
 from tframe.common.crawler_jrj_1m import fetch_jrj_1m_data, save_to_db
@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pytz import timezone
 
 # 本地股票数据获取类，读取本地 sql 数据库
-class LocalStockData(BaseStockData):
+class LocalSingleStockData(BaseSingleStockData):
     def __init__(self, stock_id: str):
         self.config = ConfigReader()
 
@@ -244,3 +244,22 @@ class LocalStockData(BaseStockData):
         ret = StockBars()
         ret.set_dataframe(df)
         return ret
+
+    # 获取当前价格
+    def GetCurrentPrice(self, time: datetime = None) -> float:
+        if time is None:
+            time = datetime.now()
+        # 获取最新1分钟数据
+        df = self.Get1MinBarsByCount(time, 1)
+        if df.empty:
+            logging.warning(f"No data found for {self.stock_id} at {time}")
+            return 0
+        return df.iloc[-1]['close']
+
+# 本地股票数据获取类，读取本地 sql 数据库
+class LocalStockData(BaseStockData):
+    def __init__(self):
+        pass
+    
+    def __getitem__(self, key) -> LocalSingleStockData:
+        return LocalSingleStockData(key)

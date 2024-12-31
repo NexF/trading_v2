@@ -13,6 +13,7 @@ yum install libX11-devel nss pango.x86_64 libXcomposite.x86_64 libXcursor.x86_64
 class EastMoneySession(BaseSession):
     def __init__(self, user, passwd):
         super().__init__(user, passwd)
+        self.__cookies = None
         self.ocr = ddddocr.DdddOcr(beta = True)
         self.url = 'https://jywg.eastmoneysec.com/Login'
         
@@ -21,7 +22,13 @@ class EastMoneySession(BaseSession):
         browser = await launch(options={'args': ['--no-sandbox', "--window-size=1920,1080"]})
         page = await browser.newPage()
         await page.setViewport({"width":1920,"height":1080})    # 页面长度，页面宽度
+        # 设置 cookies
+        await page.setCookie(self.__cookies)
         await page.goto(self.url)                               # 转到login
+        if page.url != self.url:
+            logging.warning('登录成功')
+            return await page.cookies()
+        # 设置账户，selector可以通过chrome开发者模式右键获
         await page.type('#txtZjzh',self.user)                   # 设置账户，selector可以通过chrome开发者模式右键获取
         await page.type('#txtPwd',self.passwd)                  # 设置密码
         VaildImg = await page.xpath('//*[@id="imgValidCode"]')  # 得到验证码对象，通过xpath
@@ -52,5 +59,5 @@ class EastMoneySession(BaseSession):
         return ret
     
     def get_session(self):
-        cookies = asyncio.get_event_loop().run_until_complete(self.__login__())
-        return cookies
+        self.__cookies = asyncio.get_event_loop().run_until_complete(self.__login__())
+        return self.__cookies
