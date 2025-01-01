@@ -204,7 +204,7 @@ class EastMoneyAccount(BaseAccount):
                 price = common.GetFiveQuote(stock_id)['fivequote']['sale1']
             else:  # 卖出
                 price = common.GetFiveQuote(stock_id)['fivequote']['buy1']
-        # 计算数量，100的整数倍，向下取整
+        # 计算数量，100的整数倍
         amount = int(cash_amount / price * 100) * 100
         if amount == 0:
             logging.error(f"下单失败：下单数量为 0. 价格[{price}]，金额[{cash_amount}]")
@@ -222,7 +222,7 @@ class EastMoneyAccount(BaseAccount):
     # 调仓
     def Rebalance(self, stock_id: str, amount: int, price: float = None) -> BaseOrder:
         if self.Position()[stock_id] is None:
-            return self.OrderByValue(stock_id, amount, price)
+            return self.Order(stock_id, amount, price)
         return self.Order(stock_id, amount - self.Position()[stock_id].StockAmount(), price)
     
     # 按金额调仓

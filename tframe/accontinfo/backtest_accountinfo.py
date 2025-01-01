@@ -5,6 +5,8 @@ from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition, BaseOrd
 from tframe.stockdata.base_stockdata import BaseStockData, BaseSingleStockData
 from tframe.accontinfo.backtest_order_validator import OrderValidatorManager, CashValidator, PositionValidator
 from tframe.accontinfo.backtest_timemanager import TimeMethod
+LOT_SIZE = 100  # A股的最小交易单位
+
 # 订单观察者接口
 class OrderObserver(ABC):
     @abstractmethod
@@ -233,6 +235,9 @@ class BacktestPositionManager(OrderObserver, TimeMethod):
     def AddPositionObserver(self, observer: PositionObserver):
         self.__position_observers.append(observer)
 
+    def GetPositionSet(self) -> dict[str, BacktestPosition]:
+        return self.__position_set
+
     # 交易日结束时更新持仓信息
     def AfterTradeDay(self, time: datetime):
         for position in self.__position_set.values():
@@ -285,8 +290,6 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
     # 更新账户信息
     def UpdateAccountInfo(self, time: datetime):
         self.__time = time
-        self.__position_manager.Update(time)
-        self.__order_manager.Update(time)
 
     # 获取账户可用资金
     def AvailableCash(self):
@@ -302,11 +305,11 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
 
     # 获取账户持仓
     def Position(self):
-        return self.__position_set
+        return self.__position_manager.GetPositionSet()
     
     # 获取账户冻结资金
     def FrozenCash(self):
-        return self.__frozen_cash
+        return self.__order_manager.GetFrozenCash()
 
     # 获取账户当日盈亏
     def TodayProfit(self):
@@ -333,26 +336,50 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
     # 按金额下单
     def OrderByValue(self, stock_id: str, cash_amount: float, price: float = None) -> str:
         if price is None:
-            price = self.__base_stockdata[stock_id].GetCurrentPrice()
-        amount = cash_amount / price
+            price = self.__base_stockdata[stock_id].GetCurrentPrice(self.__time)
+        amount = int(cash_amount / price * LOT_SIZE) * LOT_SIZE     #四舍五入到最近的100的倍数
         return self.Order(stock_id, amount, price)
 
-    # 按百分比下单
+    # 按百分比下单(当前现金/持仓的百分比)
     def OrderByPercent(self, stock_id: str, percent: float, price: float = None) -> str:
-        pass
+        if percent < -1 or percent > 1:
+            logging.error(f"下单失败：百分比[{percent}]不在-1到1之间")
+            return None
 
+        if percent > 0:
+            return self.OrderByValue(stock_id, self.AvailableCash() * percent, price)
+        else:
+            if self.Position()[stock_id] is None:
+                return None
+            return self.OrderByValue(stock_id, self.Position()[stock_id].MarketValue() * percent, price)
+
+    # 按百分比下单(当前全部资产的百分比)
+    def OrderByTotalPercent(self, stock_id: str, percent: float, price: float = None) -> str:
+        if percent < -1 or percent > 1:
+            logging.error(f"下单失败：百分比[{percent}]不在-1到1之间")
+            return None
+        return self.OrderByValue(stock_id, self.TotalValue() * percent, price)
 
     # 调仓
-    def Rebalance(self, stock_id: str, percent: float):
-        pass
+    def Rebalance(self, stock_id: str, amount: int, price: float = None):
+        if self.Position()[stock_id] is None:
+            return self.Order(stock_id, amount, price)
+        return self.Order(stock_id, amount - self.Position()[stock_id].Amount(), price)
 
     # 按金额调仓
-    def RebalanceByValue(self, stock_id: str, cash_amount: float):
-        pass
+    def RebalanceByValue(self, stock_id: str, cash_amount: float, price: float = None):
+        if self.Position()[stock_id] is None:
+            return self.OrderByValue(stock_id, cash_amount, price)
+        return self.OrderByValue(stock_id, cash_amount - self.Position()[stock_id].MarketValue(), price)
 
-    # 按百分比调仓
-    def RebalanceByPercent(self, stock_id: str, percent: float):
-        pass
+    # 按百分比调仓(当前全部资产的百分比)
+    def RebalanceByTotalPercent(self, stock_id: str, percent: float, price: float = None):
+        if percent < 0 or percent > 1:
+            logging.error(f"调仓失败：百分比[{percent}]不在0到1之间")
+            return None
+        if self.Position()[stock_id] is None:
+            return self.OrderByTotalPercent(stock_id, percent, price)
+        return self.OrderByTotalPercent(stock_id, percent - self.Position()[stock_id].MarketValue() / self.TotalValue(), price)
     
     def OnOrderUpdate(self, order: BaseOrder, amount: int, price: float):
         if amount > 0:
@@ -368,3 +395,25 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
 
     def OnPositionUpdate(self, position: BasePosition, amount: int, price: float):
         pass
+
+    # 交易分钟结束时的回调函数
+    def AfterTradeMinute(self, time: datetime):
+        self.UpdateAccountInfo(time)
+        pass
+
+    # 交易日结束时的回调函数
+    def AfterTradeDay(self, time: datetime):
+        self.UpdateAccountInfo(time)
+        pass
+
+    # 交易日开始时(09:31:00)的回调函数
+    def OnTradeDayStart(self, time: datetime):
+        self.UpdateAccountInfo(time)
+
+    # 交易日结束时(14:55:00)的回调函数
+    def OnTradeDayEnd(self, time: datetime):
+        self.UpdateAccountInfo(time)
+
+    # 交易日开始前的回调函数
+    def BeforeTradeDay(self, time: datetime):
+        self.UpdateAccountInfo(time)
