@@ -1,46 +1,16 @@
-import logging
+
 import mysql.connector
+from tframe.timemanager.base_timemanager import BaseTimeManager, TimeMethod
 from tframe.common.config_reader import ConfigReader
-from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, time
-from tframe.accontinfo.backtest_accountinfo import BacktestAccount, BacktestOrder
 DB_HOST = ConfigReader().get_db_root_config()['host']
 DB_PORT = ConfigReader().get_db_root_config()['port']
 DB_USER = ConfigReader().get_db_root_config()['user']
 DB_PASSWORD = ConfigReader().get_db_root_config()['password']
 
 
-# 时间管理器接口
-class TimeMethod(ABC):
-
-    # 交易日开始时的回调函数
-    @abstractmethod
-    def BeforeTradeDay(self, time: datetime):
-        pass
-
-
-    # 交易日开始时(09:31:00)的回调函数
-    @abstractmethod
-    def OnTradeDayStart(self, time: datetime):
-        pass
-
-    # 交易日结束时(14:55:00)的回调函数
-    @abstractmethod
-    def OnTradeDayEnd(self, time: datetime):
-        pass
-
-    # 交易日结束时的回调函数
-    @abstractmethod
-    def AfterTradeDay(self, time: datetime):
-        pass
-
-    # 交易分钟结束时的回调函数
-    @abstractmethod
-    def AfterTradeMinute(self, time: datetime):
-        pass
-
 # 时间管理器
-class TimeManager:
+class TimeManager(BaseTimeManager):
     _time_methods: list[TimeMethod] = []
     def __init__(self, start_date: datetime, end_date: datetime):
         self._start_date = start_date

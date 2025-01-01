@@ -113,6 +113,7 @@ class EastMoneyAccount(BaseAccount):
         except json.decoder.JSONDecodeError as e:
             logging.error(f"登录态过期，重新登录")
             self.session = EastMoneySession(self.user, self.passwd).get_session()
+            
     # 更新账户信息
     def UpdateAccountInfo(self):
         try:

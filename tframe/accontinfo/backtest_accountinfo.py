@@ -4,7 +4,7 @@ from datetime import datetime
 from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition, BaseOrder, OrderStatus
 from tframe.stockdata.base_stockdata import BaseStockData, BaseSingleStockData
 from tframe.accontinfo.backtest_order_validator import OrderValidatorManager, CashValidator, PositionValidator
-from tframe.accontinfo.backtest_timemanager import TimeMethod
+from tframe.timemanager.base_timemanager import TimeMethod
 LOT_SIZE = 100  # A股的最小交易单位
 
 # 订单观察者接口
@@ -388,6 +388,7 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
             self.__available_cash -= amount * price
 
     def OnOrderCreate(self, order: BaseOrder, amount: int, price: float):
+        logging.info(f"OnOrderCreate: {order.GetOrderCode()}, {amount}, {price}")
         if amount > 0:
             self.__available_cash -= amount * price
             self.__frozen_cash += amount * price
