@@ -1,4 +1,4 @@
-
+import logging
 import mysql.connector
 from tframe.timemanager.base_timemanager import BaseTimeManager, TimeMethod
 from tframe.common.config_reader import ConfigReader
@@ -41,28 +41,58 @@ class TimeManager(BaseTimeManager):
 
     # 交易日开始时的回调函数
     def BeforeTradeDay(self, time: datetime):
-        for method in self._time_methods:
-            method.BeforeTradeDay(time)
+        start_timestamp = datetime.now().timestamp()
+        logging.info(f"开始执行 BeforeTradeDay 回调函数 - {time}")
+        try:
+            for method in self._time_methods:
+                method.BeforeTradeDay(time)
+            logging.info(f"BeforeTradeDay 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
+        except Exception as e:
+            logging.error(f"BeforeTradeDay 回调函数执行出错: {e}")
 
     # 交易日开始时(09:31:00)的回调函数
     def OnTradeDayStart(self, time: datetime):
-        for method in self._time_methods:
-            method.OnTradeDayStart(time)
+        start_timestamp = datetime.now().timestamp()
+        logging.info(f"开始执行 OnTradeDayStart 回调函数 - {time}")
+        try:
+            for method in self._time_methods:
+                method.OnTradeDayStart(time)
+            logging.info(f"OnTradeDayStart 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
+        except Exception as e:
+            logging.error(f"OnTradeDayStart 回调函数执行出错: {e}")
 
     # 交易日结束时(14:55:00)的回调函数
     def OnTradeDayEnd(self, time: datetime):
-        for method in self._time_methods:
-            method.OnTradeDayEnd(time)
+        start_timestamp = datetime.now().timestamp()
+        logging.info(f"开始执行 OnTradeDayEnd 回调函数 - {time}")
+        try:
+            for method in self._time_methods:
+                method.OnTradeDayEnd(time)
+            logging.info(f"OnTradeDayEnd 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
+        except Exception as e:
+            logging.error(f"OnTradeDayEnd 回调函数执行出错: {e}")
 
     # 交易日结束时的回调函数
     def AfterTradeDay(self, time: datetime):
-        for method in self._time_methods:
-            method.AfterTradeDay(time)
+        start_timestamp = datetime.now().timestamp()
+        logging.info(f"开始执行 AfterTradeDay 回调函数 - {time}")
+        try:
+            for method in self._time_methods:
+                method.AfterTradeDay(time)
+            logging.info(f"AfterTradeDay 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
+        except Exception as e:
+            logging.error(f"AfterTradeDay 回调函数执行出错: {e}")
 
     # 交易分钟结束时的回调函数
     def AfterTradeMinute(self, time: datetime):
-        for method in self._time_methods:
-            method.AfterTradeMinute(time)
+        start_timestamp = datetime.now().timestamp()
+        logging.debug(f"开始执行 AfterTradeMinute 回调函数 - {time}")
+        try:
+            for method in self._time_methods:
+                method.AfterTradeMinute(time)
+            logging.debug(f"AfterTradeMinute 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
+        except Exception as e:
+            logging.error(f"AfterTradeMinute 回调函数执行出错: {e}")
 
     # 时间循环
     def TimeLoop(self):
