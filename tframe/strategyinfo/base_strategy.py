@@ -1,41 +1,45 @@
 import sys
-sys.path.append("./")       # 添加tframe目录到系统路径,使得可以导入tframe
 import logging
-import tframe.tframe as tframe
-
+from tframe.timemanager.base_timemanager import TimeMethod
+from tframe.tframe import TContext
 from datetime import datetime
 
 class BaseStrategy():
     # 策略初始化函数，全局只执行一次
-    def Init(self, context: tframe.TContext):
+    def Init(self, context: TContext):
         pass
 
     # 交易日开始时的回调函数
-    def BeforeTradeDay(self, time: datetime, context: tframe.TContext):
+    def BeforeTradeDay(self, time: datetime, context: TContext):
         pass
 
     # 交易日开始时(09:31:00)的回调函数
-    def OnTradeDayStart(self, time: datetime, context: tframe.TContext):
+    def OnTradeDayStart(self, time: datetime, context: TContext):
         pass
 
     # 交易日结束时(14:55:00)的回调函数
-    def OnTradeDayEnd(self, time: datetime, context: tframe.TContext):
+    def OnTradeDayEnd(self, time: datetime, context: TContext):
         pass
 
     # 交易日结束时的回调函数
-    def AfterTradeDay(self, time: datetime, context: tframe.TContext):
+    def AfterTradeDay(self, time: datetime, context: TContext):
         pass
 
     # 交易分钟结束时的回调函数
-    def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
+    def AfterTradeMinute(self, time: datetime, context: TContext):
         pass
 
-class StrategyTrigger(tframe.TimeMethod):
+class StrategyTrigger(TimeMethod):
+    # 策略
+    strategy: BaseStrategy = None
+    # 上下文
+    context: TContext = None
+
     def __init__(self):
         pass
 
     # 关联策略和context
-    def SetStrategy(self, strategy: BaseStrategy, context: tframe.TContext):
+    def SetStrategy(self, strategy: BaseStrategy, context: TContext):
         self.strategy = strategy
         self.context = context
 
