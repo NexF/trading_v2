@@ -4,7 +4,9 @@ from datetime import datetime
 from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition, BaseOrder, OrderStatus
 from tframe.stockdata.base_stockdata import BaseStockData, BaseSingleStockData
 from tframe.accontinfo.backtest_order_validator import OrderValidatorManager, CashValidator, PositionValidator
-from tframe.timemanager.base_timemanager import TimeMethod
+from tframe.timemanager.base_timemanager import TimeMethod, BaseTimeManager
+from tframe.tframe import TContext
+
 LOT_SIZE = 100  # A股的最小交易单位
 
 # 订单观察者接口
@@ -83,11 +85,11 @@ class BacktestOrderManager(TimeMethod):
         return order.GetOrderCode()
     
     # 交易日结束时的回调函数
-    def AfterTradeDay(self, time: datetime):
+    def AfterTradeDay(self, time: datetime, context: tframe.TContext):
         pass
 
     # 交易分钟结束时的回调函数
-    def AfterTradeMinute(self, time: datetime):
+    def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
         self.UpdateOrderStatus(time)
 
     # 更新订单状态
@@ -239,7 +241,7 @@ class BacktestPositionManager(OrderObserver, TimeMethod):
         return self.__position_set
 
     # 交易日结束时更新持仓信息
-    def AfterTradeDay(self, time: datetime):
+    def AfterTradeDay(self, time: datetime, context: tframe.TContext):
         for position in self.__position_set.values():
             if position.Amount() == 0:                          # 如果持仓数量为0，则移除
                 self.__position_set.pop(position.StockId())
@@ -266,10 +268,17 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
     __position_manager: BacktestPositionManager
     __order_manager: BacktestOrderManager
     __time: datetime            # 当前回测的时间
-    def __init__(self, base_stockdata: BaseStockData):
+
+    def __init__(self):
         super().__init__()
+
+    def __init__(self, base_stockdata: BaseStockData, timemanager: BaseTimeManager):
+        super().__init__()
+        self.init(base_stockdata, timemanager)
+
+    def init(self, base_stockdata: BaseStockData, timemanager: BaseTimeManager):
         self.__base_stockdata = base_stockdata
-        self.__order_set = BacktestOrderManager(self, self.__base_stockdata)
+        self.__order_manager = BacktestOrderManager(self, self.__base_stockdata)
         self.__position_manager = BacktestPositionManager(self, self.__order_manager, self.__base_stockdata)
         self.__available_cash = 0
         self.__initial_available_cash = 0
@@ -278,6 +287,9 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
         self.__order_manager.AddOrderObserver(self)
 
         self.__position_manager.AddPositionObserver(self)
+        timemanager.AddTimeMethod(self)
+        timemanager.AddTimeMethod(self.__position_manager)
+        timemanager.AddTimeMethod(self.__order_manager)
 
     def SetInitialAvailableCash(self, cash: float):
         self.__available_cash = cash
@@ -398,23 +410,23 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
         pass
 
     # 交易分钟结束时的回调函数
-    def AfterTradeMinute(self, time: datetime):
+    def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
         self.UpdateAccountInfo(time)
         pass
 
     # 交易日结束时的回调函数
-    def AfterTradeDay(self, time: datetime):
+    def AfterTradeDay(self, time: datetime, context: tframe.TContext):
         self.UpdateAccountInfo(time)
         pass
 
     # 交易日开始时(09:31:00)的回调函数
-    def OnTradeDayStart(self, time: datetime):
+    def OnTradeDayStart(self, time: datetime, context: tframe.TContext):
         self.UpdateAccountInfo(time)
 
     # 交易日结束时(14:55:00)的回调函数
-    def OnTradeDayEnd(self, time: datetime):
+    def OnTradeDayEnd(self, time: datetime, context: tframe.TContext):
         self.UpdateAccountInfo(time)
 
     # 交易日开始前的回调函数
-    def BeforeTradeDay(self, time: datetime):
+    def BeforeTradeDay(self, time: datetime, context: tframe.TContext):
         self.UpdateAccountInfo(time)

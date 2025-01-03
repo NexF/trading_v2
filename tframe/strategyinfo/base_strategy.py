@@ -1,83 +1,64 @@
-
-from abc import ABC, abstractmethod
-from datetime import datetime
+import sys
+sys.path.append("./")       # 添加tframe目录到系统路径,使得可以导入tframe
+import logging
 import tframe.tframe as tframe
 
-# 时间管理器接口
-class TimeMethod(ABC):
+from datetime import datetime
 
-    # 交易日开始时的回调函数
-    @abstractmethod
+class BaseStrategy():
+    # 策略初始化函数，全局只执行一次
     def Init(self, context: tframe.TContext):
         pass
 
     # 交易日开始时的回调函数
-    @abstractmethod
     def BeforeTradeDay(self, time: datetime, context: tframe.TContext):
         pass
 
     # 交易日开始时(09:31:00)的回调函数
-    @abstractmethod
     def OnTradeDayStart(self, time: datetime, context: tframe.TContext):
         pass
 
     # 交易日结束时(14:55:00)的回调函数
-    @abstractmethod
     def OnTradeDayEnd(self, time: datetime, context: tframe.TContext):
         pass
 
     # 交易日结束时的回调函数
-    @abstractmethod
     def AfterTradeDay(self, time: datetime, context: tframe.TContext):
         pass
 
     # 交易分钟结束时的回调函数
-    @abstractmethod
     def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
         pass
 
-# 时间管理器
-class BaseTimeManager:
-    _time_methods: list[TimeMethod] = []
+class StrategyTrigger(tframe.TimeMethod):
     def __init__(self):
         pass
 
-    # 添加时间方法
-    def AddTimeMethod(self, method: TimeMethod):
-        self._time_methods.append(method)
+    # 关联策略和context
+    def SetStrategy(self, strategy: BaseStrategy, context: tframe.TContext):
+        self.strategy = strategy
+        self.context = context
 
-    # 初始化时间方法
-    def InitMethod(self, method: TimeMethod):
-        for method in self._time_methods:
-            method.Init(self)
+    # 策略初始化函数，全局只执行一次
+    def Init(self, time: datetime):
+        self.strategy.Init(time, self.context)
 
     # 交易日开始时的回调函数
     def BeforeTradeDay(self, time: datetime):
-        for method in self._time_methods:
-            method.BeforeTradeDay(time)
+        self.strategy.BeforeTradeDay(time, self.context)
 
     # 交易日开始时(09:31:00)的回调函数
     def OnTradeDayStart(self, time: datetime):
-        for method in self._time_methods:
-            method.OnTradeDayStart(time)
+        self.strategy.OnTradeDayStart(time, self.context)
 
     # 交易日结束时(14:55:00)的回调函数
     def OnTradeDayEnd(self, time: datetime):
-        for method in self._time_methods:
-            method.OnTradeDayEnd(time)
+        self.strategy.OnTradeDayEnd(time, self.context)
 
     # 交易日结束时的回调函数
     def AfterTradeDay(self, time: datetime):
-        for method in self._time_methods:
-            method.AfterTradeDay(time)
+        self.strategy.AfterTradeDay(time, self.context)
 
     # 交易分钟结束时的回调函数
     def AfterTradeMinute(self, time: datetime):
-        for method in self._time_methods:
-            method.AfterTradeMinute(time)
-
-    # 时间循环
-    def TimeLoop(self):
-        pass
-
-    
+        self.strategy.AfterTradeMinute(time, self.context)

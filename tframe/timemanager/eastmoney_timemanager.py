@@ -67,6 +67,17 @@ class EastMoneyTimeManager(TimeManager):
     def AddTimeMethod(self, method: TimeMethod):
         self._time_methods.append(method)
 
+    # 初始化方法
+    def InitMethod(self, time: datetime):
+        start_timestamp = datetime.now().timestamp()
+        logging.info(f"开始初始化方法 - {time}")
+        try:
+            for method in self._time_methods:
+                method.Init(self)
+            logging.info(f"初始化方法完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
+        except Exception as e:
+            logging.error(f"初始化方法出错: {e}")
+
     # 交易日开始时的回调函数
     def BeforeTradeDay(self, time: datetime):
         start_timestamp = datetime.now().timestamp()
@@ -125,7 +136,7 @@ class EastMoneyTimeManager(TimeManager):
     # 时间循环
     def TimeLoop(self):
         import time
-        
+        self.InitMethod(datetime.now())
         while True:
             try:
                 current_time = datetime.now()

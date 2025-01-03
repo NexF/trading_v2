@@ -4,6 +4,8 @@ import tframe.common.eastmoney_common as common
 from lxml import etree
 from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition, BaseOrder, OrderStatus
 from tframe.session.eastmoney_session import EastMoneySession
+from tframe.timemanager.base_timemanager import TimeMethod
+from tframe.tframe import TContext
 from datetime import datetime, timedelta
 
 # 订单集合
@@ -77,7 +79,7 @@ class EastMoneyOrder(BaseOrder):
         return self._order_code
 
 # 获取东财账户信息的类
-class EastMoneyAccount(BaseAccount):
+class EastMoneyAccount(BaseAccount, TimeMethod):
     # 东财账户信息获取api地址
     __kAccountInfoUrl = "https://jywg.eastmoneysec.com/Com/queryAssetAndPositionV1"
     # 东财validatekey获取api地址，这个地址今后可以改变
@@ -127,6 +129,14 @@ class EastMoneyAccount(BaseAccount):
         doc = etree.HTML(ret_html)
         self.__validatekey = doc.xpath('//*[@id="em_validatekey"]/@value')[0]
         logging.info(f"get eastmoney validatekey[{self.__validatekey}]")
+
+    # 交易日开始时的回调函数
+    def BeforeTradeDay(self, time: datetime, context: tframe.TContext):
+        self.UpdateAccountInfo()
+        
+    # 交易分钟结束时的回调函数
+    def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
+        self.UpdateAccountInfo()
 
     # 获取账户可用资金
     def AvailableCash(self):

@@ -10,7 +10,7 @@ DB_PASSWORD = ConfigReader().get_db_root_config()['password']
 
 
 # 时间管理器
-class TimeManager(BaseTimeManager):
+class BacktestTimeManager(BaseTimeManager):
     _time_methods: list[TimeMethod] = []
     def __init__(self, start_date: datetime, end_date: datetime):
         self._start_date = start_date
@@ -38,6 +38,17 @@ class TimeManager(BaseTimeManager):
     # 添加时间方法
     def AddTimeMethod(self, method: TimeMethod):
         self._time_methods.append(method)
+
+    # 初始化方法
+    def InitMethod(self, time: datetime):
+        start_timestamp = datetime.now().timestamp()
+        logging.info(f"开始初始化方法 - {time}")
+        try:
+            for method in self._time_methods:
+                method.Init(self)
+            logging.info(f"初始化方法完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
+        except Exception as e:
+            logging.error(f"初始化方法出错: {e}")
 
     # 交易日开始时的回调函数
     def BeforeTradeDay(self, time: datetime):
@@ -96,6 +107,7 @@ class TimeManager(BaseTimeManager):
 
     # 时间循环
     def TimeLoop(self):
+        self.InitMethod(self._start_date)
         for trade_day in self._trade_days:
             trade_day_time = datetime.strptime(trade_day, "%Y-%m-%d 09:00:00")
             # 交易日开始

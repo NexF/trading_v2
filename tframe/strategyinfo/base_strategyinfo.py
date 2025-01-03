@@ -19,10 +19,6 @@ class BaseStrategyInfo:
     def SetStrategyName(self, name: str):
         raise NotImplementedError("SetStrategyName is not implemented")
     
-    # 设置策略频率
-    def SetStrategyFrequency(self, frequency: str):
-        raise NotImplementedError("SetStrategyFrequency is not implemented")
-    
     # 设置策略基准指数
     def SetStrategyBenchmarkIndex(self, index: str):
         raise NotImplementedError("SetStrategyBenchmarkIndex is not implemented")
