@@ -5,7 +5,6 @@ from lxml import etree
 from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition, BaseOrder, OrderStatus
 from tframe.session.eastmoney_session import EastMoneySession
 from tframe.timemanager.base_timemanager import TimeMethod
-from tframe.tframe import TContext
 from datetime import datetime, timedelta
 
 # 订单集合
@@ -17,7 +16,7 @@ class EastMoneyOrderSet:
     __account_info: 'EastMoneyAccount' # 账户信息
     __order_info: dict # 订单信息
 
-    def __init__(self, account_info: EastMoneyAccount):
+    def __init__(self, account_info: 'EastMoneyAccount'):
         self.__account_info = account_info
     
     def Update(self):
@@ -131,11 +130,11 @@ class EastMoneyAccount(BaseAccount, TimeMethod):
         logging.info(f"get eastmoney validatekey[{self.__validatekey}]")
 
     # 交易日开始时的回调函数
-    def BeforeTradeDay(self, time: datetime, context: tframe.TContext):
+    def BeforeTradeDay(self, time: datetime):
         self.UpdateAccountInfo()
         
     # 交易分钟结束时的回调函数
-    def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
+    def AfterTradeMinute(self, time: datetime):
         self.UpdateAccountInfo()
 
     # 获取账户可用资金

@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime, timedelta
-from tframe.timemanager.base_timemanager import TimeManager, TimeMethod
+from tframe.timemanager.base_timemanager import BaseTimeManager, TimeMethod
 from tframe.common.tushare_global import TushareProGlobal
 # 时间管理器
-class EastMoneyTimeManager(TimeManager):
+class EastMoneyTimeManager(BaseTimeManager):
     _time_methods: list[TimeMethod] = []
     def __init__(self):
         self._trade_calendar = None

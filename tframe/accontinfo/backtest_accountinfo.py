@@ -5,7 +5,6 @@ from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition, BaseOrd
 from tframe.stockdata.base_stockdata import BaseStockData, BaseSingleStockData
 from tframe.accontinfo.backtest_order_validator import OrderValidatorManager, CashValidator, PositionValidator
 from tframe.timemanager.base_timemanager import TimeMethod, BaseTimeManager
-from tframe.tframe import TContext
 
 LOT_SIZE = 100  # A股的最小交易单位
 
@@ -85,11 +84,11 @@ class BacktestOrderManager(TimeMethod):
         return order.GetOrderCode()
     
     # 交易日结束时的回调函数
-    def AfterTradeDay(self, time: datetime, context: tframe.TContext):
+    def AfterTradeDay(self, time: datetime):
         pass
 
     # 交易分钟结束时的回调函数
-    def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
+    def AfterTradeMinute(self, time: datetime):
         self.UpdateOrderStatus(time)
 
     # 更新订单状态
@@ -268,6 +267,7 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
     __position_manager: BacktestPositionManager
     __order_manager: BacktestOrderManager
     __time: datetime            # 当前回测的时间
+    _validator_manager: Optional['OrderValidatorManager'] = None
 
     def __init__(self):
         super().__init__()
@@ -430,3 +430,6 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
     # 交易日开始前的回调函数
     def BeforeTradeDay(self, time: datetime, context: tframe.TContext):
         self.UpdateAccountInfo(time)
+
+    def set_validator_manager(self, manager: 'OrderValidatorManager'):
+        self._validator_manager = manager

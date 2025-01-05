@@ -1,39 +1,38 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-import tframe.tframe as tframe
 
 # 时间管理器接口
 class TimeMethod(ABC):
 
     # 交易日开始时的回调函数
     @abstractmethod
-    def Init(self, context: tframe.TContext):
+    def Init(self):
         pass
 
     # 交易日开始时的回调函数
     @abstractmethod
-    def BeforeTradeDay(self, time: datetime, context: tframe.TContext):
+    def BeforeTradeDay(self, time: datetime):
         pass
 
     # 交易日开始时(09:31:00)的回调函数
     @abstractmethod
-    def OnTradeDayStart(self, time: datetime, context: tframe.TContext):
+    def OnTradeDayStart(self, time: datetime):
         pass
 
     # 交易日结束时(14:55:00)的回调函数
     @abstractmethod
-    def OnTradeDayEnd(self, time: datetime, context: tframe.TContext):
+    def OnTradeDayEnd(self, time: datetime):
         pass
 
     # 交易日结束时的回调函数
     @abstractmethod
-    def AfterTradeDay(self, time: datetime, context: tframe.TContext):
+    def AfterTradeDay(self, time: datetime):
         pass
 
     # 交易分钟结束时的回调函数
     @abstractmethod
-    def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
+    def AfterTradeMinute(self, time: datetime):
         pass
 
 # 时间管理器
@@ -79,5 +78,3 @@ class BaseTimeManager:
     # 时间循环
     def TimeLoop(self):
         pass
-
-    

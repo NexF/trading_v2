@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from base_stockbars import StockBars
+from tframe.stockdata.base_stockbars import StockBars
 
 # 单个股票数据获取基类
 class BaseSingleStockData:

@@ -9,8 +9,6 @@ class BacktestingStrategyInfo(base_strategyinfo.BaseStrategyInfo):
     __strategy_end_time: datetime = None
     # 策略名称
     __strategy_name: str = None
-    # 策略频率
-    __strategy_frequency: str = None
     # 策略基准指数
     __strategy_benchmark_index: str = None
 
@@ -31,10 +29,6 @@ class BacktestingStrategyInfo(base_strategyinfo.BaseStrategyInfo):
     # 设置策略名称
     def SetStrategyName(self, name: str):
         self.__strategy_name = name
-    
-    # 设置策略频率
-    def SetStrategyFrequency(self, frequency: str):
-        self.__strategy_frequency = frequency
     
     # 设置策略基准指数
     def SetStrategyBenchmarkIndex(self, index: str):
