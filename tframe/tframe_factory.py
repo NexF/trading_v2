@@ -3,7 +3,7 @@ from tframe.accontinfo.eastmoney_accontinfo import EastMoneyAccount
 from tframe.strategyinfo.base_strategyinfo import BaseStrategyInfo
 from tframe.timemanager.backtest_timemanager import BacktestTimeManager
 from tframe.timemanager.eastmoney_timemanager import EastMoneyTimeManager
-from tframe.accontinfo.backtest_accountinfo import BacktestAccountInfo
+from tframe.accontinfo.backtest_accountinfo import BacktestAccount
 from tframe.stockdata.local_stockdata import LocalStockData
 class TContextFactory:
 
@@ -18,7 +18,7 @@ class TContextFactory:
         """
         if config_text == "backtest":
             # 创建accontinfo实例
-            accontinfo = BacktestAccountInfo()
+            accontinfo = BacktestAccount()
             
             # 创建timemanager实例
             timemanager = BacktestTimeManager(strategyinfo.GetStrategyStartTime(), strategyinfo.GetStrategyEndTime())
@@ -27,7 +27,7 @@ class TContextFactory:
             local_stockdata = LocalStockData()
 
             # 初始化accontinfo
-            accontinfo.init(local_stockdata, timemanager)
+            accontinfo.Init(local_stockdata, timemanager)
             context = tframe.TContext(accontinfo, strategyinfo, timemanager)
         elif config_text == "eastmoney_forward":
             # 创建accontinfo实例

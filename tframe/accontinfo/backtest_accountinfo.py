@@ -1,12 +1,75 @@
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
 from tframe.accontinfo.base_accontinfo import BaseAccount, BasePosition, BaseOrder, OrderStatus
 from tframe.stockdata.base_stockdata import BaseStockData, BaseSingleStockData
-from tframe.accontinfo.backtest_order_validator import OrderValidatorManager, CashValidator, PositionValidator
 from tframe.timemanager.base_timemanager import TimeMethod, BaseTimeManager
 
 LOT_SIZE = 100  # A股的最小交易单位
+
+
+
+# 交易验证结果
+@dataclass
+class ValidationResult:
+    is_valid: bool
+    message: str = ""
+
+# 交易验证器接口
+class OrderValidator(ABC):
+    @abstractmethod
+    def validate(self, order: 'BacktestOrder', account: 'BacktestAccount') -> ValidationResult:
+        pass
+
+# 具体验证器
+class CashValidator(OrderValidator):
+    def validate(self, order: 'BacktestOrder', account: 'BacktestAccount') -> ValidationResult:
+        if order.GetAmount() <= 0:   # 卖出不需要检查资金
+            return ValidationResult(True)
+        
+        required_cash = order.GetAmount() * order.GetPrice()
+        if account.AvailableCash() >= required_cash:
+            return ValidationResult(True)
+        return ValidationResult(
+            False, 
+            f"可用资金不足: 需要 {required_cash}, 实际 {account.AvailableCash()}"
+        )
+
+class PositionValidator(OrderValidator):
+    def validate(self, order: 'BacktestOrder', account: 'BacktestAccount') -> ValidationResult:
+        if order.GetAmount() >= 0:  # 买入不需要检查持仓
+            return ValidationResult(True)
+        
+        position = account.Position().get(order.GetStockId())
+        if not position:
+            logging.warning(f"下单失败，没有持仓: {order.GetStockId()}")
+            return ValidationResult(False, "没有持仓")
+        
+        if position.SellableAmount() >= abs(order.GetAmount()):
+            return ValidationResult(True)
+        else:
+            logging.warning(f"下单失败，可卖数量不足: {order.GetStockId()}")
+            return ValidationResult(
+                False,
+                f"可卖数量不足: 需要 {abs(order.GetAmount())}, 实际 {position.SellableAmount()}"
+            )
+
+# 验证器管理器
+class OrderValidatorManager:
+    def __init__(self):
+        self._validators: list[OrderValidator] = []
+    
+    def add_validator(self, validator: OrderValidator):
+        self._validators.append(validator)
+    
+    def validate(self, order: 'BacktestOrder', account: 'BacktestAccount') -> ValidationResult:
+        for validator in self._validators:
+            result = validator.validate(order, account)
+            if not result.is_valid:
+                return result
+        return ValidationResult(True)
+
 
 # 订单观察者接口
 class OrderObserver(ABC):
@@ -55,9 +118,15 @@ class BacktestOrderManager(TimeMethod):
     __order_validator_manager: OrderValidatorManager
 
     def __init__(self, account_info: 'BacktestAccount', base_stockdata: BaseStockData):
+        """初始化订单管理器"""
         self.__account_info = account_info
         self.__base_stockdata = base_stockdata
-
+        
+        # 初始化订单集合
+        self.__order_set = {}               # 当日订单
+        self.__history_order_set = {}       # 历史订单
+        self.__order_observers = []         # 观察者列表
+        
         # 创建验证器管理器
         self.__order_validator_manager = OrderValidatorManager()    # 初始化订单验证器管理器, 后期改成依赖注入的形式
         self.__order_validator_manager.add_validator(CashValidator())
@@ -83,6 +152,22 @@ class BacktestOrderManager(TimeMethod):
 
         return order.GetOrderCode()
     
+    # 交易开始时的回调函数
+    def TradeInit(self, time: datetime):
+        pass
+
+    # 交易日开始时的回调函数
+    def BeforeTradeDay(self, time: datetime):
+        pass
+
+    # 交易日开始时(09:31:00)的回调函数
+    def OnTradeDayStart(self, time: datetime):
+        pass
+
+    # 交易日结束时(14:55:00)的回调函数
+    def OnTradeDayEnd(self, time: datetime):
+        pass
+
     # 交易日结束时的回调函数
     def AfterTradeDay(self, time: datetime):
         pass
@@ -142,7 +227,7 @@ class BacktestPosition(BasePosition):
     __stock_name: str   # 证券名称
     __amount: int      # 持仓数量
     __cost_price: float # 成本价
-    __buy_time: datetime.datetime # 买入时间
+    __buy_time: datetime # 买入时间
     __current_price: float # 当前价
     __market_value: float # 市值
     __profit: float # 盈亏
@@ -153,7 +238,7 @@ class BacktestPosition(BasePosition):
 
     # 初始化持仓信息
     # 由于是回测，所以需要传入初始时间
-    def __init__(self, stock_id : str, amount : int, cost_price : float, time : datetime.datetime, base_stockdata: BaseStockData):
+    def __init__(self, stock_id : str, amount : int, cost_price : float, time : datetime, base_stockdata: BaseStockData):
         self.__stock_id = stock_id
         self.__amount = amount
         self.__cost_price = cost_price
@@ -164,7 +249,7 @@ class BacktestPosition(BasePosition):
 
     # 更新持仓信息
     # 由于是回测，所以需要传入当前时间，会根据当前时间计算当前价格和收益
-    def Update(self, delta_amount: int, price: float, time: datetime.datetime):
+    def Update(self, delta_amount: int, price: float, time: datetime):
         self.__cost_price = (self.__cost_price * self.__amount + delta_amount * price) / (self.__amount + delta_amount)
         self.__amount += delta_amount
         self.__current_price = self.__base_stockdata[self.__stock_id].GetCurrentPrice(time)
@@ -238,9 +323,29 @@ class BacktestPositionManager(OrderObserver, TimeMethod):
 
     def GetPositionSet(self) -> dict[str, BacktestPosition]:
         return self.__position_set
+    
+    # 交易开始时的回调函数
+    def TradeInit(self, time: datetime):
+        pass
+
+    # 交易日开始时的回调函数
+    def BeforeTradeDay(self, time: datetime):
+        pass
+
+    # 交易日开始时(09:31:00)的回调函数
+    def OnTradeDayStart(self, time: datetime):
+        pass
+
+    # 交易日结束时(14:55:00)的回调函数
+    def OnTradeDayEnd(self, time: datetime):
+        pass
+
+    # 交易分钟结束时的回调函数
+    def AfterTradeMinute(self, time: datetime):
+        pass
 
     # 交易日结束时更新持仓信息
-    def AfterTradeDay(self, time: datetime, context: tframe.TContext):
+    def AfterTradeDay(self, time: datetime):
         for position in self.__position_set.values():
             if position.Amount() == 0:                          # 如果持仓数量为0，则移除
                 self.__position_set.pop(position.StockId())
@@ -267,16 +372,20 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
     __position_manager: BacktestPositionManager
     __order_manager: BacktestOrderManager
     __time: datetime            # 当前回测的时间
-    _validator_manager: Optional['OrderValidatorManager'] = None
+    _validator_manager: OrderValidatorManager
 
     def __init__(self):
-        super().__init__()
+        """构造函数只做最基本的初始化"""
+        self.__available_cash = 0
+        self.__initial_available_cash = 0
+        self.__frozen_cash = 0
+        self.__base_stockdata = None
+        self.__order_manager = None
+        self.__position_manager = None
+        self.__time = None
 
-    def __init__(self, base_stockdata: BaseStockData, timemanager: BaseTimeManager):
-        super().__init__()
-        self.init(base_stockdata, timemanager)
 
-    def init(self, base_stockdata: BaseStockData, timemanager: BaseTimeManager):
+    def Init(self, base_stockdata: BaseStockData, timemanager: BaseTimeManager):
         self.__base_stockdata = base_stockdata
         self.__order_manager = BacktestOrderManager(self, self.__base_stockdata)
         self.__position_manager = BacktestPositionManager(self, self.__order_manager, self.__base_stockdata)
@@ -409,26 +518,30 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
     def OnPositionUpdate(self, position: BasePosition, amount: int, price: float):
         pass
 
+    # 交易开始时的回调函数
+    def TradeInit(self, time: datetime):
+        pass
+
     # 交易分钟结束时的回调函数
-    def AfterTradeMinute(self, time: datetime, context: tframe.TContext):
+    def AfterTradeMinute(self, time: datetime):
         self.UpdateAccountInfo(time)
         pass
 
     # 交易日结束时的回调函数
-    def AfterTradeDay(self, time: datetime, context: tframe.TContext):
+    def AfterTradeDay(self, time: datetime):
         self.UpdateAccountInfo(time)
         pass
 
     # 交易日开始时(09:31:00)的回调函数
-    def OnTradeDayStart(self, time: datetime, context: tframe.TContext):
+    def OnTradeDayStart(self, time: datetime):
         self.UpdateAccountInfo(time)
 
     # 交易日结束时(14:55:00)的回调函数
-    def OnTradeDayEnd(self, time: datetime, context: tframe.TContext):
+    def OnTradeDayEnd(self, time: datetime):
         self.UpdateAccountInfo(time)
 
     # 交易日开始前的回调函数
-    def BeforeTradeDay(self, time: datetime, context: tframe.TContext):
+    def BeforeTradeDay(self, time: datetime):
         self.UpdateAccountInfo(time)
 
     def set_validator_manager(self, manager: 'OrderValidatorManager'):

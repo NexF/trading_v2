@@ -5,9 +5,9 @@ from datetime import datetime
 # 时间管理器接口
 class TimeMethod(ABC):
 
-    # 交易日开始时的回调函数
+    # 交易开始时的回调函数
     @abstractmethod
-    def Init(self):
+    def TradeInit(self, time: datetime):
         pass
 
     # 交易日开始时的回调函数

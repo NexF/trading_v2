@@ -6,7 +6,7 @@ from datetime import datetime
 
 class BaseStrategy():
     # 策略初始化函数，全局只执行一次
-    def Init(self, context: TContext):
+    def TradeInit(self, time: datetime, context: TContext):
         pass
 
     # 交易日开始时的回调函数
@@ -44,8 +44,8 @@ class StrategyTrigger(TimeMethod):
         self.context = context
 
     # 策略初始化函数，全局只执行一次
-    def Init(self, time: datetime):
-        self.strategy.Init(time, self.context)
+    def TradeInit(self, time: datetime):
+        self.strategy.TradeInit(time, self.context)
 
     # 交易日开始时的回调函数
     def BeforeTradeDay(self, time: datetime):

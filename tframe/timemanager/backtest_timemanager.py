@@ -19,7 +19,7 @@ class BacktestTimeManager(BaseTimeManager):
         self._trade_days = self._get_trade_days()
 
     # 获取交易日历
-    def _get_trade_days(self) -> list[str]:
+    def _get_trade_days(self) -> list[datetime.date]:
         conn = mysql.connector.connect(
             host=DB_HOST,
             port=DB_PORT,
@@ -30,10 +30,23 @@ class BacktestTimeManager(BaseTimeManager):
         cursor = conn.cursor()
         # 获取交易日历
         query = """
-            SELECT date FROM stock_1d FORCE INDEX (idx_date) WHERE date >= %s AND date <= %s GROUP BY date ORDER BY date
+            SELECT date FROM stock_1d FORCE INDEX (idx_date) 
+            WHERE date >= %s AND date <= %s 
+            GROUP BY date ORDER BY date
         """
-        cursor.execute(query, (self._start_date.strftime("%Y%m%d"), self._end_date.strftime("%Y%m%d")))
-        return [date[0] for date in cursor.fetchall()]
+        cursor.execute(query, (
+            self._start_date.strftime("%Y%m%d"), 
+            self._end_date.strftime("%Y%m%d")
+        ))
+        
+        # MySQL DATE 类型字段会被 mysql-connector-python 自动转换为 datetime.date 对象
+        # 所以这里直接返回查询结果即可
+        trade_days = [date[0] for date in cursor.fetchall()]
+        
+        cursor.close()
+        conn.close()
+        
+        return trade_days
 
     # 添加时间方法
     def AddTimeMethod(self, method: TimeMethod):
@@ -45,7 +58,7 @@ class BacktestTimeManager(BaseTimeManager):
         logging.info(f"开始初始化方法 - {time}")
         try:
             for method in self._time_methods:
-                method.Init(self)
+                method.TradeInit(time)
             logging.info(f"初始化方法完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
         except Exception as e:
             logging.error(f"初始化方法出错: {e}")
@@ -108,29 +121,31 @@ class BacktestTimeManager(BaseTimeManager):
     # 时间循环
     def TimeLoop(self):
         self.InitMethod(self._start_date)
-        for trade_day in self._trade_days:
-            trade_day_time = datetime.strptime(trade_day, "%Y-%m-%d 09:00:00")
+        for trade_day in self._trade_days:  # trade_day 是 datetime.date 对象
+            # 使用 datetime.combine 直接创建 datetime 对象
+            trade_day_time = datetime.combine(trade_day, time(9, 0))
+            
             # 交易日开始
             self.BeforeTradeDay(trade_day_time)
             
             # 上午交易时段 9:30-11:30
-            morning_start = datetime.combine(trade_day_time, time(9, 30))
-            morning_end = datetime.combine(trade_day_time, time(11, 30))
+            morning_start = datetime.combine(trade_day, time(9, 30))
+            morning_end = datetime.combine(trade_day, time(11, 30))
             current_time = morning_start
             while current_time <= morning_end:
                 self.AfterTradeMinute(current_time)
                 current_time += timedelta(minutes=1)
             
             # 下午交易时段 13:00-15:00
-            afternoon_start = datetime.combine(trade_day_time, time(13, 0))
-            afternoon_end = datetime.combine(trade_day_time, time(15, 0))
+            afternoon_start = datetime.combine(trade_day, time(13, 0))
+            afternoon_end = datetime.combine(trade_day, time(15, 0))
             current_time = afternoon_start
             while current_time <= afternoon_end:
                 self.AfterTradeMinute(current_time)
                 current_time += timedelta(minutes=1)
             
-            trade_day_time = datetime.strptime(trade_day, "%Y-%m-%d 16:00:00")
-            # 交易日结束
-            self.AfterTradeDay(trade_day_time)
+            # 交易日结束，直接使用 combine
+            trade_day_end = datetime.combine(trade_day, time(16, 0))
+            self.AfterTradeDay(trade_day_end)
 
     

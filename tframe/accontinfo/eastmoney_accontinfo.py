@@ -90,17 +90,13 @@ class EastMoneyAccount(BaseAccount, TimeMethod):
     __validatekey: str # validatekey
 
     __order_set: EastMoneyOrderSet # 订单集合
-    # 初始化
-    def __init__(self, user, passwd):
-        super().__init__(user, passwd)
-        self.init(user, passwd)
 
     def __init__(self):
-        super().__init__()
+        pass
 
-    def init(self, user, passwd):
+    def Init(self, user, passwd):
         self.user = user
-        self.passwd = passwd
+        self.passwd = passwdI
         self.session = EastMoneySession(user, passwd).get_session()
         self.UpdateAccountInfo()
         # 获取初始总资产，用于计算总收益率

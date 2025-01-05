@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
-from base_stockdata import BaseStockData, BaseSingleStockData
-from base_stockbars import StockBars
+from tframe.stockdata.base_stockdata import BaseStockData, BaseSingleStockData
+from tframe.stockdata.base_stockbars import StockBars
 from tframe.common.config_reader import ConfigReader
 from tframe.common.crawler_jrj_1m import fetch_jrj_1m_data, save_to_db
 import mysql.connector

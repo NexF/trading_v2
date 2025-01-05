@@ -79,9 +79,6 @@ class BaseOrder:
         
 # 账户信息基类
 class BaseAccount:
-    def __init__(self, user, passwd):
-        self.user = user
-        self.passwd = passwd
 
     def __init__(self):
         pass

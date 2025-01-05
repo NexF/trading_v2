@@ -73,7 +73,7 @@ class EastMoneyTimeManager(BaseTimeManager):
         logging.info(f"开始初始化方法 - {time}")
         try:
             for method in self._time_methods:
-                method.Init(self)
+                method.TradeInit(time)
             logging.info(f"初始化方法完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
         except Exception as e:
             logging.error(f"初始化方法出错: {e}")
