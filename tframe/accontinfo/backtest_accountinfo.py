@@ -106,7 +106,10 @@ class BacktestOrder(BaseOrder):
         self._status = OrderStatus.PENDING
         self._average_filled_price = 0
         self._filled_amount = 0
-        self._frozen_cash = amount * price
+        if amount > 0:
+            self._frozen_cash = amount * price
+        else:
+            self._frozen_cash = 0
 
     def GetOrderCode(self):
         return self._order_code
@@ -204,14 +207,14 @@ class BacktestOrderManager(TimeMethod):
             # 从 df 的末尾开始遍历
             for i in range(len(df)-1, -1, -1):
                 row = df.iloc[i]
-                if order._filled_amount >= order._amount:
+                if abs(order._filled_amount) >= abs(order._amount):
                     break
                 
                 # 暂时使用收盘价作为成交价，后续需要修改
                 # 成交量的1/2为可买到的量
                 price = float(row['close'])
-                filled_amount = order.Fill(int(row['volume']/2), price)
-                if filled_amount > 0:
+                filled_amount = order.Fill(int(row['volume']/2)*100, price)
+                if filled_amount != 0:
                     logging.warn(f"订单 {order._order_code} 在 {df['date'][i]} {df['time'][i]} 成交 {filled_amount} 股， 剩余 {order._amount - order._filled_amount} 股，成交价 {price}")
                     for observer in self.__order_observers:
                         observer.OnOrderUpdate(order, filled_amount, price)
@@ -270,12 +273,16 @@ class BacktestPosition(BasePosition):
     # 更新持仓信息
     # 由于是回测，所以需要传入当前时间，会根据当前时间计算当前价格和收益
     def Update(self, delta_amount: int, price: float, time: datetime):
-        self.__cost_price = (self.__cost_price * self.__amount + delta_amount * price) / (self.__amount + delta_amount)
+        if self.__amount + delta_amount == 0:
+            self.__cost_price = 0
+            self.__profit_rate = 0
+        else:
+            self.__cost_price = (self.__cost_price * self.__amount + delta_amount * price) / (self.__amount + delta_amount)
+            self.__profit_rate = self.__profit / (self.__cost_price * self.__amount)
         self.__amount += delta_amount
         self.__current_price = self.__base_stockdata[self.__stock_id].GetCurrentPrice(time)
         self.__market_value = self.__amount * self.__current_price
         self.__profit = (self.__current_price - self.__cost_price) * self.__amount
-        self.__profit_rate = self.__profit / (self.__cost_price * self.__amount)
         self.__today_profit = 0
         self.__today_profit_rate = 0
 
@@ -371,10 +378,17 @@ class BacktestPositionManager(OrderObserver, TimeMethod):
 
     # 交易日结束时更新持仓信息
     def AfterTradeDay(self, time: datetime):
+        # 创建一个列表来存储需要删除的股票代码
+        to_remove = []
+        
+        # 先收集需要删除的持仓
         for position in self.__position_set.values():
-            if position.Amount() == 0:                          # 如果持仓数量为0，则移除
-                self.__position_set.pop(position.StockId())
-                continue
+            if position.Amount() == 0:
+                to_remove.append(position.StockId())
+        
+        # 遍历完成后再删除
+        for stock_id in to_remove:
+            self.__position_set.pop(stock_id)
 
     # 订单更新时更新持仓信息
     def OnOrderUpdate(self, order: BaseOrder, amount: int, price: float):
@@ -483,7 +497,7 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
         if price is None:
             price = self.__base_stockdata[stock_id].GetCurrentPrice(self.__time)
         price = float(price)
-        amount = int(cash_amount / (price * LOT_SIZE)) * LOT_SIZE     #四舍五入到最近的100的倍数
+        amount = int(cash_amount / (price * LOT_SIZE)) * LOT_SIZE     #向下取整到最近的100的倍数
         return self.Order(stock_id, amount, price)
 
     # 按百分比下单(当前现金/持仓的百分比)

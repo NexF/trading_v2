@@ -31,7 +31,10 @@ class BaseOrder:
         self._status = OrderStatus.PENDING
         self._average_filled_price = 0
         self._filled_amount = 0
-        self._frozen_cash = amount * price
+        if amount > 0:
+            self._frozen_cash = amount * price
+        else:
+            self._frozen_cash = 0
     # 成交
     def Fill(self, amount: int, price: float):
         # 先检查 price 是否处于限价内
@@ -51,7 +54,9 @@ class BaseOrder:
             self._filled_amount = self._amount
         else:
             self._status = OrderStatus.ACTIVE
-        self._frozen_cash -= amount * price
+            
+        if amount > 0:
+            self._frozen_cash -= amount * price
 
         return amount
 
