@@ -211,16 +211,16 @@ class EastMoneyAccount(BaseAccount, TimeMethod):
             else:  # 卖出
                 price = common.GetFiveQuote(stock_id)['fivequote']['buy1']
         # 计算数量，100的整数倍
-        amount = int(cash_amount / price * 100) * 100
+        amount = int(cash_amount / (price * 100)) * 100
         if amount == 0:
             logging.error(f"下单失败：下单数量为 0. 价格[{price}]，金额[{cash_amount}]")
             return None
         return self.Order(stock_id, amount, price)
 
     # 按百分比下单
-    def OrderByPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
-        if percent < 0 or percent > 1:
-            logging.error(f"下单失败：百分比[{percent}]不在0到1之间")
+    def OrderByTotalPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
+        if percent < -1 or percent > 1:
+            logging.error(f"下单失败：百分比[{percent}]不在-1到1之间")
             return None
         
         return self.OrderByValue(stock_id, self.TotalValue() * percent, price)
@@ -238,7 +238,7 @@ class EastMoneyAccount(BaseAccount, TimeMethod):
         return self.OrderByValue(stock_id, cash_amount - self.Position()[stock_id].MarketValue(), price)
     
     # 按百分比调仓
-    def RebalanceByPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
+    def RebalanceByTotalPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
         if self.Position()[stock_id] is None:
             return self.OrderByPercent(stock_id, percent, price)
         return self.OrderByPercent(stock_id, percent - self.Position()[stock_id].MarketValue() / self.TotalValue(), price)

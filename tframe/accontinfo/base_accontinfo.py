@@ -21,6 +21,7 @@ class BaseOrder:
     _amount: int # 下单数量
     _create_time: datetime # 创建时间
     _price: float = None # 限价
+    _frozen_cash: float # 冻结资金
     
     def __init__(self, stock_id: str, amount: int, create_time: datetime, price: float = None):
         self._stock_id = stock_id
@@ -30,7 +31,7 @@ class BaseOrder:
         self._status = OrderStatus.PENDING
         self._average_filled_price = 0
         self._filled_amount = 0
-
+        self._frozen_cash = amount * price
     # 成交
     def Fill(self, amount: int, price: float):
         # 先检查 price 是否处于限价内
@@ -46,10 +47,12 @@ class BaseOrder:
         self._filled_amount += amount
         if abs(self._filled_amount) >= abs(self._amount):
             self._status = OrderStatus.COMPLETED
-            amount = self._amount - self._filled_amount
+            amount = amount + self._amount - self._filled_amount
             self._filled_amount = self._amount
         else:
             self._status = OrderStatus.ACTIVE
+        self._frozen_cash -= amount * price
+
         return amount
 
     def GetUnfilledAmount(self):
@@ -129,7 +132,7 @@ class BaseAccount:
         raise NotImplementedError("OrderValue is not implemented")
 
     # 根据当前总资产百分比下单
-    def OrderByPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
+    def OrderByTotalPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
         raise NotImplementedError("OrderPercent is not implemented")
 
     # 调仓
@@ -142,8 +145,8 @@ class BaseAccount:
         raise NotImplementedError("RebalanceByValue is not implemented")
 
     # 根据当前总资产百分比调仓
-    def RebalanceByPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
-        raise NotImplementedError("RebalanceByPercent is not implemented")  
+    def RebalanceByTotalPercent(self, stock_id: str, percent: float, price: float = None) -> BaseOrder:
+        raise NotImplementedError("RebalanceByTotalPercent is not implemented")  
 
 # 持仓基类
 class BasePosition:

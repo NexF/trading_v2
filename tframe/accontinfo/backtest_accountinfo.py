@@ -78,6 +78,10 @@ class OrderObserver(ABC):
         pass
 
     @abstractmethod
+    def OnOrderCompleted(self, order: BaseOrder, amount: int, price: float):
+        pass
+
+    @abstractmethod
     def OnOrderCreate(self, order: BaseOrder, amount: int, price: float):
         pass
 
@@ -102,6 +106,7 @@ class BacktestOrder(BaseOrder):
         self._status = OrderStatus.PENDING
         self._average_filled_price = 0
         self._filled_amount = 0
+        self._frozen_cash = amount * price
 
     def GetOrderCode(self):
         return self._order_code
@@ -180,6 +185,7 @@ class BacktestOrderManager(TimeMethod):
     def UpdateOrderStatus(self, time: datetime):
         for order in self.__order_set.values():
             # 如果 order 的创建时间不为今天，则将它变为CANCELLED
+            order._last_update_time = time
             if order.GetCreateTime().date() != time.date():
                 order._status = OrderStatus.CANCELLED
                 self.__order_set.pop(order.GetOrderCode())
@@ -203,14 +209,18 @@ class BacktestOrderManager(TimeMethod):
                 
                 # 暂时使用收盘价作为成交价，后续需要修改
                 # 成交量的1/2为可买到的量
-                price = row['close']
-                filled_amount = order.Fill(row['volume']/2, price, df.index[i])
+                price = float(row['close'])
+                filled_amount = order.Fill(int(row['volume']/2), price)
                 if filled_amount > 0:
-                    logging.info(f"订单 {order._order_code} 在 {df.index[i]} 成交 {filled_amount} 股，成交价 {price}")
+                    logging.warn(f"订单 {order._order_code} 在 {df['date'][i]} {df['time'][i]} 成交 {filled_amount} 股， 剩余 {order._amount - order._filled_amount} 股，成交价 {price}")
                     for observer in self.__order_observers:
                         observer.OnOrderUpdate(order, filled_amount, price)
+
+                if order._status == OrderStatus.COMPLETED:
+                    for observer in self.__order_observers:
+                        observer.OnOrderCompleted(order, filled_amount, price)
+                    
                 
-            order._last_update_time = time
 
     def SetOrder(self, order: 'BacktestOrder'):
         self.__order_set[order.GetOrderCode()] = order
@@ -220,6 +230,12 @@ class BacktestOrderManager(TimeMethod):
 
     def GetOrderSet(self):
         return self.__order_set
+
+    def GetFrozenCash(self):
+        frozen_cash = 0
+        for order in self.__order_set.values():
+            frozen_cash += order._frozen_cash
+        return frozen_cash
 
 # 持仓类
 class BacktestPosition(BasePosition):
@@ -244,9 +260,13 @@ class BacktestPosition(BasePosition):
         self.__cost_price = cost_price
         self.__buy_time = time
         self.__base_stockdata = base_stockdata
-
-        self.Update(time)
-
+        self.__current_price = self.__base_stockdata[self.__stock_id].GetCurrentPrice(time)
+        self.__market_value = self.__amount * self.__current_price
+        self.__profit = 0
+        self.__profit_rate = 0
+        self.__today_profit = 0
+        self.__today_profit_rate = 0
+        
     # 更新持仓信息
     # 由于是回测，所以需要传入当前时间，会根据当前时间计算当前价格和收益
     def Update(self, delta_amount: int, price: float, time: datetime):
@@ -344,6 +364,11 @@ class BacktestPositionManager(OrderObserver, TimeMethod):
     def AfterTradeMinute(self, time: datetime):
         pass
 
+    # 更新持仓信息
+    def UpdatePosition(self, time: datetime):
+        for position in self.__position_set.values():
+            position.Update(0, 0, time)
+
     # 交易日结束时更新持仓信息
     def AfterTradeDay(self, time: datetime):
         for position in self.__position_set.values():
@@ -361,6 +386,9 @@ class BacktestPositionManager(OrderObserver, TimeMethod):
             self.__position_set[order._stock_id].Update(amount, price, order._last_update_time)
 
     def OnOrderCreate(self, order: BaseOrder, amount: int, price: float):
+        pass
+
+    def OnOrderCompleted(self, order: BaseOrder, amount: int, price: float):
         pass
 
 # 回测模拟账户类
@@ -418,11 +446,12 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
 
     # 获取账户持仓市值
     def PositionMarketValue(self):
-        return sum([position.MarketValue() for position in self.__positions.values()])
+        self.__position_manager.UpdatePosition(self.__time)
+        return sum([position.MarketValue() for position in self.Position().values()])
 
     # 获取账户总资产
     def TotalValue(self):
-        return self.AvailableCash() + self.PositionMarketValue()
+        return self.AvailableCash() + self.PositionMarketValue() + self.FrozenCash()
 
     # 获取账户持仓
     def Position(self):
@@ -438,27 +467,23 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
     
     # 获取账户持仓盈亏
     def PositionProfit(self):
-        return sum([position.Profit() for position in self.__positions.values()])
+        return sum([position.Profit() for position in self.Position().values()])
 
     # 获取账户总收益率
     def TotalReturnRate(self):
         return (self.TotalValue() - self.__initial_available_cash) / self.__initial_available_cash
 
-    # 设置账户初始可用资金
-    # 仅供回测使用
-    def SetInitialAvailableCash(self, cash: float):
-        self.__initial_available_cash = cash
-
     # 下单
     def Order(self, stock_id: str, amount: int, price: float) -> str:
-        return self.__order_manager.CreateOrder(stock_id, amount, price)
+        return self.__order_manager.CreateOrder(stock_id, amount, self.__time, price)
 
 
     # 按金额下单
     def OrderByValue(self, stock_id: str, cash_amount: float, price: float = None) -> str:
         if price is None:
             price = self.__base_stockdata[stock_id].GetCurrentPrice(self.__time)
-        amount = int(cash_amount / price * LOT_SIZE) * LOT_SIZE     #四舍五入到最近的100的倍数
+        price = float(price)
+        amount = int(cash_amount / (price * LOT_SIZE)) * LOT_SIZE     #四舍五入到最近的100的倍数
         return self.Order(stock_id, amount, price)
 
     # 按百分比下单(当前现金/持仓的百分比)
@@ -470,7 +495,7 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
         if percent > 0:
             return self.OrderByValue(stock_id, self.AvailableCash() * percent, price)
         else:
-            if self.Position()[stock_id] is None:
+            if self.Position().get(stock_id) is None:
                 return None
             return self.OrderByValue(stock_id, self.Position()[stock_id].MarketValue() * percent, price)
 
@@ -483,13 +508,13 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
 
     # 调仓
     def Rebalance(self, stock_id: str, amount: int, price: float = None):
-        if self.Position()[stock_id] is None:
+        if self.Position().get(stock_id) is None:
             return self.Order(stock_id, amount, price)
         return self.Order(stock_id, amount - self.Position()[stock_id].Amount(), price)
 
     # 按金额调仓
     def RebalanceByValue(self, stock_id: str, cash_amount: float, price: float = None):
-        if self.Position()[stock_id] is None:
+        if self.Position().get(stock_id) is None:
             return self.OrderByValue(stock_id, cash_amount, price)
         return self.OrderByValue(stock_id, cash_amount - self.Position()[stock_id].MarketValue(), price)
 
@@ -498,22 +523,22 @@ class BacktestAccount(BaseAccount, OrderObserver, PositionObserver, TimeMethod):
         if percent < 0 or percent > 1:
             logging.error(f"调仓失败：百分比[{percent}]不在0到1之间")
             return None
-        if self.Position()[stock_id] is None:
+        if self.Position().get(stock_id) is None:
             return self.OrderByTotalPercent(stock_id, percent, price)
         return self.OrderByTotalPercent(stock_id, percent - self.Position()[stock_id].MarketValue() / self.TotalValue(), price)
     
     def OnOrderUpdate(self, order: BaseOrder, amount: int, price: float):
-        if amount > 0:
-            self.__frozen_cash -= amount * price
-        else:
+        if amount < 0:
             self.__available_cash -= amount * price
+
+    def OnOrderCompleted(self, order: BaseOrder, amount: int, price: float):
+        self.__available_cash += order._frozen_cash
+        order._frozen_cash = 0
 
     def OnOrderCreate(self, order: BaseOrder, amount: int, price: float):
         logging.info(f"OnOrderCreate: {order.GetOrderCode()}, {amount}, {price}")
         if amount > 0:
             self.__available_cash -= amount * price
-            self.__frozen_cash += amount * price
-        pass
 
     def OnPositionUpdate(self, position: BasePosition, amount: int, price: float):
         pass

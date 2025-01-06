@@ -250,11 +250,11 @@ class LocalSingleStockData(BaseSingleStockData):
         if time is None:
             time = datetime.now()
         # 获取最新1分钟数据
-        df = self.Get1MinBarsByCount(time, 1)
+        df = self.Get1MinBarsByCount(time, 1).get_dataframe()
         if df.empty:
             logging.warning(f"No data found for {self.stock_id} at {time}")
             return 0
-        return df.iloc[-1]['close']
+        return float(df.iloc[-1]['close'])
 
 # 本地股票数据获取类，读取本地 sql 数据库
 class LocalStockData(BaseStockData):

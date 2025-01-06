@@ -1,5 +1,6 @@
 import logging
 import mysql.connector
+import traceback
 from tframe.timemanager.base_timemanager import BaseTimeManager, TimeMethod
 from tframe.common.config_reader import ConfigReader
 from datetime import datetime, timedelta, time
@@ -61,7 +62,7 @@ class BacktestTimeManager(BaseTimeManager):
                 method.TradeInit(time)
             logging.info(f"初始化方法完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
         except Exception as e:
-            logging.error(f"初始化方法出错: {e}")
+            logging.error(f"初始化方法出错: {e}, {traceback.format_exc()}")
 
     # 交易日开始时的回调函数
     def BeforeTradeDay(self, time: datetime):
@@ -72,7 +73,7 @@ class BacktestTimeManager(BaseTimeManager):
                 method.BeforeTradeDay(time)
             logging.info(f"BeforeTradeDay 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
         except Exception as e:
-            logging.error(f"BeforeTradeDay 回调函数执行出错: {e}")
+            logging.error(f"BeforeTradeDay 回调函数执行出错: {e}, {traceback.format_exc()}")
 
     # 交易日开始时(09:31:00)的回调函数
     def OnTradeDayStart(self, time: datetime):
@@ -83,7 +84,7 @@ class BacktestTimeManager(BaseTimeManager):
                 method.OnTradeDayStart(time)
             logging.info(f"OnTradeDayStart 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
         except Exception as e:
-            logging.error(f"OnTradeDayStart 回调函数执行出错: {e}")
+            logging.error(f"OnTradeDayStart 回调函数执行出错: {e}, {traceback.format_exc()}")
 
     # 交易日结束时(14:55:00)的回调函数
     def OnTradeDayEnd(self, time: datetime):
@@ -94,7 +95,7 @@ class BacktestTimeManager(BaseTimeManager):
                 method.OnTradeDayEnd(time)
             logging.info(f"OnTradeDayEnd 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
         except Exception as e:
-            logging.error(f"OnTradeDayEnd 回调函数执行出错: {e}")
+            logging.error(f"OnTradeDayEnd 回调函数执行出错: {e}, {traceback.format_exc()}")
 
     # 交易日结束时的回调函数
     def AfterTradeDay(self, time: datetime):
@@ -105,18 +106,18 @@ class BacktestTimeManager(BaseTimeManager):
                 method.AfterTradeDay(time)
             logging.info(f"AfterTradeDay 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
         except Exception as e:
-            logging.error(f"AfterTradeDay 回调函数执行出错: {e}")
+            logging.error(f"AfterTradeDay 回调函数执行出错: {e}, {traceback.format_exc()}")
 
     # 交易分钟结束时的回调函数
     def AfterTradeMinute(self, time: datetime):
         start_timestamp = datetime.now().timestamp()
-        logging.debug(f"开始执行 AfterTradeMinute 回调函数 - {time}")
+        logging.info(f"开始执行 AfterTradeMinute 回调函数 - {time}")
         try:
             for method in self._time_methods:
                 method.AfterTradeMinute(time)
-            logging.debug(f"AfterTradeMinute 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
+            logging.info(f"AfterTradeMinute 回调函数执行完成，耗时: {datetime.now().timestamp() - start_timestamp:.2f}秒")
         except Exception as e:
-            logging.error(f"AfterTradeMinute 回调函数执行出错: {e}")
+            logging.error(f"AfterTradeMinute 回调函数执行出错: {e}, {traceback.format_exc()}")
 
     # 时间循环
     def TimeLoop(self):
@@ -135,6 +136,8 @@ class BacktestTimeManager(BaseTimeManager):
             while current_time <= morning_end:
                 self.AfterTradeMinute(current_time)
                 current_time += timedelta(minutes=1)
+                if current_time.hour == 9 and current_time.minute == 31:
+                    self.OnTradeDayStart(current_time)
             
             # 下午交易时段 13:00-15:00
             afternoon_start = datetime.combine(trade_day, time(13, 0))
@@ -143,6 +146,8 @@ class BacktestTimeManager(BaseTimeManager):
             while current_time <= afternoon_end:
                 self.AfterTradeMinute(current_time)
                 current_time += timedelta(minutes=1)
+                if current_time.hour == 14 and current_time.minute == 55:
+                    self.OnTradeDayEnd(current_time)
             
             # 交易日结束，直接使用 combine
             trade_day_end = datetime.combine(trade_day, time(16, 0))
