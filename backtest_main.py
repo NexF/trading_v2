@@ -14,7 +14,7 @@ class BacktestStrategy(BaseStrategy):
 
     # 策略初始化函数，全局只执行一次
     def TradeInit(self, time: datetime, context: TContext):
-        context.accontinfo.SetInitialAvailableCash(1000) # 设置初始可用资金,100万
+        context.accontinfo.SetInitialAvailableCash(1000000) # 设置初始可用资金,100万
         logging.info("策略初始化")
         pass
 
