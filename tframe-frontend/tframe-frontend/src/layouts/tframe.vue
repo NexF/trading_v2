@@ -24,7 +24,18 @@ const toggleDark = useToggle(isDark)
   <div class="layout">
     <!-- 顶部标题栏 -->
     <el-header class="header">
-
+      <div class="header-left">
+        <el-button
+          class="collapse-btn"
+          text
+          @click="isCollapse = !isCollapse"
+        >
+          <el-icon :size="20">
+            <component :is="isCollapse ? Expand : Fold" />
+          </el-icon>
+        </el-button>
+        <h2>{{ title }}</h2>
+      </div>
       <div class="header-right">
         <el-dropdown>
           <el-avatar size="small" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
