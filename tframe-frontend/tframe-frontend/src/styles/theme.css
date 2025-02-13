@@ -1,0 +1,36 @@
+
+/* 暗色模式 */
+html.dark {
+color-scheme: dark;
+--el-bg-color: #141414;          /* 暗色模式基础背景色 */
+--el-bg-color-page: #0a0a0a;     /* 暗色模式页面背景色 */
+--el-text-color-primary: #ffffff; /* 暗色模式文字颜色 */
+
+/* 其他暗色模式专用变量 */
+--el-border-color-light: #363637;    /* 边框颜色（如分割线） */
+--el-fill-color-light: #262727;      /* 填充色（如按钮悬浮背景） */
+
+/* 菜单相关的暗色变量 */
+--el-menu-bg-color: #141414;         /* 菜单背景色 */
+--el-menu-text-color: #bfbfbf;       /* 菜单文字颜色 */
+--el-menu-hover-bg-color: #262727;   /* 菜单项悬浮背景色 */
+--el-menu-active-color: #409eff;     /* 菜单激活项的颜色 */
+}
+
+/* 亮色模式 */
+html.light {
+    color-scheme: light;
+    --el-bg-color: #ffffff;          /* 基础背景色（如顶部导航栏） */
+    --el-bg-color-page: #f2f3f5;     /* 页面背景色（如内容区域） */
+    --el-text-color-primary: #303133;/* 主要文字颜色 */
+    
+    /* 其他亮色模式专用变量 */
+    --el-border-color-light: #dcdfe6;    /* 边框颜色（如分割线） */
+    --el-fill-color-light: #f5f7fa;      /* 填充色（如按钮悬浮背景） */
+    
+    /* 菜单相关的亮色变量 */
+    --el-menu-bg-color: #ffffff;         /* 菜单背景色 */
+    --el-menu-text-color: #303133;       /* 菜单文字颜色 */
+    --el-menu-hover-bg-color: #f5f7fa;   /* 菜单项悬浮背景色 */
+    --el-menu-active-color: #409eff;     /* 菜单激活项的颜色 */
+  }

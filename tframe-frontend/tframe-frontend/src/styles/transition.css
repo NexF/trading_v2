@@ -1,0 +1,23 @@
+/* 主题切换过渡效果 */
+:root {
+    --theme-transition: 0.3s cubic-bezier(0.1, 0, 0.2, 1);
+  }
+  
+  /* 应用过渡效果到特定元素 */
+  .el-button,
+  .el-menu,
+  .el-menu-item,
+  .el-dropdown-menu,
+  .el-dropdown-item,
+  .el-header,
+  .el-main,
+  .layout,
+  .header,
+  .sidebar,
+  .content,
+  body,
+  html {
+    transition: background-color var(--theme-transition),
+                color var(--theme-transition),
+                border-color var(--theme-transition) !important;
+  }
