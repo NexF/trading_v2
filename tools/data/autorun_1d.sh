@@ -4,13 +4,16 @@
 
 # 设置 Python 路径
 export PATH="/usr/local/bin:/usr/bin:$PATH"
-# 如果有特定的 PYTHONPATH，也可以设置
-# export PYTHONPATH="/path/to/your/python/libs:$PYTHONPATH"
 
 # 设置工作目录
 cd /www/dk_project/dk_app/alpine/data/trading_v2/tools/data/
 
+# 获取参数，如果没有提供则使用当天日期
+start_date=${1:-$(date +%Y%m%d)}
+end_date=${2:-$start_date}
+
 # 更新日线数据
-/usr/bin/python3 import_stock_1d_data.py `date +%Y%m%d` `date +%Y%m%d`
-# 执行 Python 脚本, 每天收盘后定时更新分钟级数据
-/usr/bin/python3 import_stock_realtime_1m_list.py
+/usr/bin/python3 import_stock_1d_data.py $start_date $end_date
+
+# 执行 Python 脚本, 更新分钟级数据
+/usr/bin/python3 import_stock_realtime_1m_list.py --start_date $start_date --end_date $end_date

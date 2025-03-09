@@ -1,0 +1,1 @@
+go run cmd/gateway/main.go -config=configs/config.yaml

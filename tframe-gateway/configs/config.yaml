@@ -1,0 +1,20 @@
+server:
+  port: 9090
+  mode: debug  # debug or release
+
+database:
+  host: 172.18.0.5
+  port: 3306
+  user: tframe_readonly
+  password: T7AamWM7WVV6CJ01
+  dbname: tframe_stock_1m
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+log:
+  level: info
+  filename: ./logs/gateway.log
+  max_size: 100    # megabytes
+  max_age: 7       # days
+  max_backups: 30 

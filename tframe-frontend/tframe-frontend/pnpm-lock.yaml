@@ -14,9 +14,15 @@ importers:
       '@vueuse/core':
         specifier: ^12.5.0
         version: 12.5.0(typescript@5.6.3)
+      echarts:
+        specifier: ^5.6.0
+        version: 5.6.0
       element-plus:
         specifier: ^2.9.4
         version: 2.9.4(vue@3.5.13(typescript@5.6.3))
+      lightweight-charts:
+        specifier: 4.1.1
+        version: 4.1.1
       vue:
         specifier: ^3.5.13
         version: 3.5.13(typescript@5.6.3)
@@ -446,6 +452,9 @@ packages:
   de-indent@1.0.2:
     resolution: {integrity: sha512-e/1zu3xH5MQryN2zdVaF0OrdNLUbvWxzMbi+iNA6Bky7l1RoP8a2fIbRocyHclXt/arDrrR6lL3TqFD9pMQTsg==}
 
+  echarts@5.6.0:
+    resolution: {integrity: sha512-oTbVTsXfKuEhxftHqL5xprgLoc0k7uScAwtryCgWF6hPYFLRwOUHiFmHGCBKP5NPFNkDVopOieyUqYGH8Fa3kA==}
+
   element-plus@2.9.4:
     resolution: {integrity: sha512-sGnW0wd9zf6lEGixXV2gfwx3X6VTMkP52qTkX7zbURJ2oariyslrKTBh2txt1sdn1pUvj2l0KY3OfSXoZGmDOw==}
     peerDependencies:
@@ -466,6 +475,9 @@ packages:
   estree-walker@2.0.2:
     resolution: {integrity: sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w==}
 
+  fancy-canvas@2.1.0:
+    resolution: {integrity: sha512-nifxXJ95JNLFR2NgRV4/MxVP45G9909wJTEKz5fg/TZS20JJZA6hfgRVh/bC9bwl2zBtBNcYPjiBE4njQHVBwQ==}
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -474,6 +486,9 @@ packages:
   he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
+
+  lightweight-charts@4.1.1:
+    resolution: {integrity: sha512-HYjm66NAIOhoLDNaaQsiwOVWiFHL1yrygZeKd4PgdZESnWyp5dPoTe3pH3t2h4ix+Ix5TwLZaNbWroZqQuj6OA==}
 
   lodash-es@4.17.21:
     resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
@@ -527,6 +542,9 @@ packages:
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
+
+  tslib@2.3.0:
+    resolution: {integrity: sha512-N82ooyxVNm6h1riLCoyS9e3fuJ3AMG2zIZs2Gd1ATcSFjSA23Q0fzjjZeh0jbJvWVDZ0cJT8yaNNaaXHzueNjg==}
 
   typescript@5.6.3:
     resolution: {integrity: sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==}
@@ -600,6 +618,9 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  zrender@5.6.1:
+    resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
 
 snapshots:
 
@@ -927,6 +948,11 @@ snapshots:
 
   de-indent@1.0.2: {}
 
+  echarts@5.6.0:
+    dependencies:
+      tslib: 2.3.0
+      zrender: 5.6.1
+
   element-plus@2.9.4(vue@3.5.13(typescript@5.6.3)):
     dependencies:
       '@ctrl/tinycolor': 3.6.1
@@ -982,10 +1008,16 @@ snapshots:
 
   estree-walker@2.0.2: {}
 
+  fancy-canvas@2.1.0: {}
+
   fsevents@2.3.3:
     optional: true
 
   he@1.2.0: {}
+
+  lightweight-charts@4.1.1:
+    dependencies:
+      fancy-canvas: 2.1.0
 
   lodash-es@4.17.21: {}
 
@@ -1050,6 +1082,8 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
+  tslib@2.3.0: {}
+
   typescript@5.6.3: {}
 
   vite@6.0.11:
@@ -1081,3 +1115,7 @@ snapshots:
       '@vue/shared': 3.5.13
     optionalDependencies:
       typescript: 5.6.3
+
+  zrender@5.6.1:
+    dependencies:
+      tslib: 2.3.0
