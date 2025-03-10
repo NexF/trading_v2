@@ -24,6 +24,7 @@ tframe-gateway/
 │   ├── model/          # 数据模型
 │   ├── repository/     # 数据访问层
 │   ├── config/         # 配置
+│   ├── wire/           # 依赖优化
 │   └── service/        # 业务逻辑层
 ├── pkg/                 # 公共包
 ├── go.mod              # Go模块文件
@@ -135,7 +136,7 @@ GORM 是 Go 语言中最流行的 ORM（对象关系映射）框架。
 ```go
 type Kline struct {
     ID     uint     
-    Symbol string    
+    code string    
     Time   int64     
     Price  float64
 }
@@ -160,7 +161,7 @@ db.Delete(&kline)
 ```go
 // 条件查询
 var klines []Kline
-db.Where("symbol = ? AND time > ?", symbol, timestamp).Find(&klines)
+db.Where("code = ? AND time > ?", code, timestamp).Find(&klines)
 
 // 使用事务
 db.Transaction(func(tx *gorm.DB) error {
@@ -184,9 +185,9 @@ db.Preload("Trades").Find(&orders)
 ```sql
 CREATE TABLE klines (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    symbol VARCHAR(20) NOT NULL,
+    code VARCHAR(20) NOT NULL,
     time BIGINT NOT NULL,
-    INDEX idx_symbol_time (symbol, time)
+    INDEX idx_code_time (code, time)
 );
 ```
 
@@ -197,12 +198,12 @@ type KlineRepository struct {
     db *gorm.DB
 }
 
-func (r *KlineRepository) GetKlines(ctx context.Context, symbol string, from, to int64) ([]model.Kline, error) {
+func (r *KlineRepository) GetKlines(ctx context.Context, code string, from, to int64) ([]model.Kline, error) {
     var klines []model.Kline
     
     result := r.db.WithContext(ctx).
         Table("klines").
-        Where("symbol = ?", symbol).
+        Where("code = ?", code).
         Where("time BETWEEN ? AND ?", from, to).
         Order("time ASC").
         Limit(1000).

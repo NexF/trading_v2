@@ -7,9 +7,9 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Log      LogConfig      `mapstructure:"log"`
+	Server   ServerConfig    `mapstructure:"server"`
+	Database DatabaseConfigs `mapstructure:"database"`
+	Log      LogConfig       `mapstructure:"log"`
 }
 
 type ServerConfig struct {
@@ -17,6 +17,13 @@ type ServerConfig struct {
 	Mode string `mapstructure:"mode"`
 }
 
+// DatabaseConfigs 包含多个数据库配置
+type DatabaseConfigs struct {
+	Stock1M *DatabaseConfig `mapstructure:"stock_1m"`
+	Stock1D *DatabaseConfig `mapstructure:"stock_1d"`
+}
+
+// DatabaseConfig 单个数据库的配置
 type DatabaseConfig struct {
 	Host            string        `mapstructure:"host"`
 	Port            int           `mapstructure:"port"`

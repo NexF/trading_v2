@@ -52,6 +52,7 @@ nohup.out
 
 # 配置文件
 local.cfg
+**.yaml
 
 # 临时文件
 tmp/
