@@ -4,20 +4,25 @@
   
   <script setup lang="ts">
   import { ref, onMounted, onUnmounted, watch } from 'vue'
-  import { createChart, IChartApi, DeepPartial, ChartOptions, HistogramSeriesOptions } from 'lightweight-charts'
+  import type { 
+    IChartApi, 
+    DeepPartial, 
+    ChartOptions, 
+    HistogramSeriesOptions,
+    Time,
+    Range
+  } from 'lightweight-charts'
+  import { createChart } from 'lightweight-charts'
+  import type { VolumeData } from '../utils/chartUtils'
   
   // 定义组件接收的属性
   const props = defineProps<{
-    // 成交量数据数组，每个元素包含时间、成交量和颜色信息
-    data: Array<{
-      time: number    // 时间戳
-      value: number   // 成交量值
-      color: string   // 柱状图颜色
-    }>
+    // 成交量数据数组
+    data: VolumeData[]
     // 可视区域的时间范围
     timeRange?: {
-      from: number    // 开始时间
-      to: number      // 结束时间
+      from: number
+      to: number
     }
     // 十字光标位置信息
     crosshairPosition?: {
@@ -28,7 +33,9 @@
   }>()
   
   // 定义组件可以触发的事件
-  const emit = defineEmits(['timeRangeChanged'])  // 时间范围变化事件
+  const emit = defineEmits<{
+    (e: 'timeRangeChanged', range: { from: number, to: number }): void
+  }>()
   
   const volumeChartContainer = ref<HTMLElement | null>(null)
   let chart: IChartApi | null = null
@@ -76,7 +83,12 @@
     // 当用户缩放或平移图表时，这个事件会被触发
     chart.timeScale().subscribeVisibleTimeRangeChange((timeRange) => {
       // 向父组件发送时间范围变化事件，用于同步主图的时间范围
-      emit('timeRangeChanged', timeRange)
+      if (timeRange) {
+        emit('timeRangeChanged', {
+          from: timeRange.from as number,
+          to: timeRange.to as number
+        })
+      }
     })
   }
   
@@ -91,14 +103,17 @@
   // 监听属性变化
   watch(() => props.timeRange, (newRange) => {
     if (chart && newRange) {
-      chart.timeScale().setVisibleRange(newRange)
+      chart.timeScale().setVisibleRange({
+        from: newRange.from as Time,
+        to: newRange.to as Time
+      })
     }
   }, { deep: true })
   
   watch(() => props.crosshairPosition, (newPosition) => {
-    if (chart && newPosition) {
-      chart.setCrosshairPosition(newPosition.x, newPosition.y, newPosition.prices)
-    }
+    // Remove crosshair position setting for volume chart
+    // Volume chart should follow main chart's crosshair, not set its own
+    console.log('Crosshair position updated:', newPosition)
   }, { deep: true })
   
   watch(() => props.data, (newData) => {

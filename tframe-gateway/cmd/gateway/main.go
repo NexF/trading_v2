@@ -10,6 +10,7 @@ import (
 	"trading-gateway/internal/routes"
 	"trading-gateway/internal/wire"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,6 +46,13 @@ func main() {
 
 	// 设置路由
 	r := gin.Default()
+	// CORS配置
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowCredentials: true,
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
+	}))
+	// 设置路由
 	v1 := r.Group("/api/v1")
 	{
 		routes.SetupKlineRoutes(v1, klineHandler)

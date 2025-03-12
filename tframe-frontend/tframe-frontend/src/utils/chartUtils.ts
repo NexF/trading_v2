@@ -1,3 +1,92 @@
+import axios from 'axios'
+import type { AxiosResponse } from 'axios'
+
+// 定义接口返回的 K 线数据类型
+export interface KlineData {
+  date: string
+  timestamp: string
+  open: number
+  high: number
+  low: number
+  close: number
+  volume: number
+  amount: number
+}
+
+// K 线图表数据接口
+export interface ChartData {
+  time: number
+  open: number
+  high: number
+  low: number
+  close: number
+}
+
+// 成交量数据接口
+export interface VolumeData {
+  time: number
+  value: number
+  color: string
+}
+
+/**
+ * 获取 K 线数据的方法
+ * @param code - 股票代码
+ * @param from - 开始日期
+ * @param to - 结束日期
+ * @param interval - 时间间隔
+ * @returns Promise<KlineData[]>
+ */
+export const fetchKlineData = async (
+  code: string = '000001.sz', 
+  from: string = '20250301', 
+  to: string = '20250312', 
+  interval: string = '1m'
+): Promise<KlineData[]> => {
+  try {
+    const response: AxiosResponse<KlineData[]> = await axios.get('http://tframeapi.nex.cab/api/v1/klines', {
+      params: { code, from, to, interval }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to fetch K-line data:', error)
+    throw error
+  }
+}
+
+/**
+ * 转换 K 线数据为图表所需格式
+ * @param klineData - 原始 K 线数据
+ * @returns ChartData[]
+ */
+export const transformKlineData = (klineData: KlineData[]): ChartData[] => {
+  return klineData
+    .map(item => ({
+      // 将字符串时间戳转换为秒级 Unix 时间戳
+      time: Math.floor(new Date(item.timestamp).getTime() / 1000),
+      open: item.open,
+      high: item.high,
+      low: item.low,
+      close: item.close
+    }))
+    .filter(item => !isNaN(item.time)) // 过滤掉无效时间
+    .sort((a, b) => a.time - b.time)   // 确保按时间升序排序
+}
+
+/**
+ * 转换成交量数据为图表所需格式
+ * @param klineData - 原始 K 线数据
+ * @returns VolumeData[]
+ */
+export const transformVolumeData = (klineData: KlineData[]): VolumeData[] => {
+  return klineData.map(item => ({
+    // 将字符串时间戳转换为秒级 Unix 时间戳
+    time: Math.floor(new Date(item.timestamp).getTime() / 1000),
+    value: item.volume,
+    color: item.open <= item.close ? '#26a69a' : '#ef5350'
+  })).filter(item => !isNaN(item.time)) // 过滤掉无效时间
+}
+
 /**
  * 生成演示用的K线和成交量数据
  * @returns {{klineData: Array, volumeData: Array}} 包含K线和成交量数据的对象
