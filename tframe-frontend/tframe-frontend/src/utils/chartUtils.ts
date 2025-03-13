@@ -55,6 +55,33 @@ export const fetchKlineData = async (
 }
 
 /**
+ * 解析时间戳字符串为Unix时间戳（秒）
+ * @param timestampStr - 格式为 "20250303 09:30:00" 的时间戳字符串
+ * @returns number - Unix时间戳（秒）
+ */
+export const parseTimestamp = (timestampStr: string): number => {
+  // 处理格式为 "20250303 09:30:00" 的时间戳
+  const dateMatch = /^(\d{4})(\d{2})(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(timestampStr);
+  
+  if (dateMatch) {
+    const [_, year, month, day, hour, minute, second] = dateMatch;
+    // 注意：JavaScript中月份是从0开始的，所以需要减1
+    const date = new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hour),
+      parseInt(minute),
+      parseInt(second)
+    );
+    return Math.floor(date.getTime() / 1000);
+  }
+  
+  // 如果不匹配预期格式，尝试标准Date解析（兼容旧格式）
+  return Math.floor(new Date(timestampStr).getTime() / 1000);
+}
+
+/**
  * 转换 K 线数据为图表所需格式
  * @param klineData - 原始 K 线数据
  * @returns ChartData[]
@@ -63,7 +90,7 @@ export const transformKlineData = (klineData: KlineData[]): ChartData[] => {
   return klineData
     .map(item => ({
       // 将字符串时间戳转换为秒级 Unix 时间戳
-      time: Math.floor(new Date(item.timestamp).getTime() / 1000),
+      time: parseTimestamp(item.timestamp),
       open: item.open,
       high: item.high,
       low: item.low,
@@ -81,7 +108,7 @@ export const transformKlineData = (klineData: KlineData[]): ChartData[] => {
 export const transformVolumeData = (klineData: KlineData[]): VolumeData[] => {
   return klineData.map(item => ({
     // 将字符串时间戳转换为秒级 Unix 时间戳
-    time: Math.floor(new Date(item.timestamp).getTime() / 1000),
+    time: parseTimestamp(item.timestamp),
     value: item.volume,
     color: item.open <= item.close ? '#26a69a' : '#ef5350'
   })).filter(item => !isNaN(item.time)) // 过滤掉无效时间
