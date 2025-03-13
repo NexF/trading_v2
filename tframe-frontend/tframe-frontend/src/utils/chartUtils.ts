@@ -1,17 +1,5 @@
-import axios from 'axios'
-import type { AxiosResponse } from 'axios'
-
-// 定义接口返回的 K 线数据类型
-export interface KlineData {
-  date: string
-  timestamp: string
-  open: number
-  high: number
-  low: number
-  close: number
-  volume: number
-  amount: number
-}
+import { fetchKlineData } from '../api/klineApi'
+import type { KlineData } from '../api/klineApi'
 
 // K 线图表数据接口
 export interface ChartData {
@@ -30,36 +18,18 @@ export interface VolumeData {
 }
 
 /**
- * 获取 K 线数据的方法
- * @param code - 股票代码
- * @param from - 开始日期
- * @param to - 结束日期
- * @param interval - 时间间隔
- * @returns Promise<KlineData[]>
- */
-export const fetchKlineData = async (
-  code: string = '000001.sz', 
-  from: string = '20250301', 
-  to: string = '20250312', 
-  interval: string = '1m'
-): Promise<KlineData[]> => {
-  try {
-    const response: AxiosResponse<KlineData[]> = await axios.get('http://tframeapi.nex.cab/api/v1/klines', {
-      params: { code, from, to, interval }
-    })
-    return response.data
-  } catch (error) {
-    console.error('Failed to fetch K-line data:', error)
-    throw error
-  }
-}
-
-/**
  * 解析时间戳字符串为Unix时间戳（秒）
- * @param timestampStr - 格式为 "20250303 09:30:00" 的时间戳字符串
+ * @param timestampStr - 时间戳字符串，支持多种格式
  * @returns number - Unix时间戳（秒）
  */
 export const parseTimestamp = (timestampStr: string): number => {
+  
+  // 如果输入为空，返回当前时间
+  if (!timestampStr) {
+    console.warn('Empty timestamp string received, using current time');
+    return Math.floor(Date.now() / 1000);
+  }
+  
   // 处理格式为 "20250303 09:30:00" 的时间戳
   const dateMatch = /^(\d{4})(\d{2})(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(timestampStr);
   
@@ -74,11 +44,77 @@ export const parseTimestamp = (timestampStr: string): number => {
       parseInt(minute),
       parseInt(second)
     );
-    return Math.floor(date.getTime() / 1000);
+    const timestamp = Math.floor(date.getTime() / 1000);
+    return timestamp;
+  }
+  
+  // 处理格式为 "20250303" 的日期
+  const dateOnlyMatch = /^(\d{4})(\d{2})(\d{2})$/.exec(timestampStr);
+  if (dateOnlyMatch) {
+    const [_, year, month, day] = dateOnlyMatch;
+    const date = new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      0, 0, 0
+    );
+    const timestamp = Math.floor(date.getTime() / 1000);
+    return timestamp;
+  }
+  
+  // 尝试处理ISO格式的时间戳 (如 "2025-03-03T09:30:00")
+  if (timestampStr.includes('T') || timestampStr.includes('-')) {
+    const timestamp = Math.floor(new Date(timestampStr).getTime() / 1000);
+    return timestamp;
+  }
+  
+  // 尝试处理纯数字的时间戳
+  if (/^\d+$/.test(timestampStr)) {
+    const numValue = parseInt(timestampStr);
+    
+    // 如果是13位（毫秒级时间戳），转换为秒级
+    if (timestampStr.length === 13) {
+      const timestamp = Math.floor(numValue / 1000);
+      console.log(`Parsed millisecond timestamp ${timestampStr} to ${timestamp}`);
+      return timestamp;
+    }
+    // 如果是10位（秒级时间戳），直接返回
+    if (timestampStr.length === 10) {
+      console.log(`Parsed second timestamp ${timestampStr} to ${numValue}`);
+      return numValue;
+    }
+    
+    // 其他长度的数字，尝试判断是否是合理的时间戳
+    const year2000 = 946684800; // 2000-01-01 的Unix时间戳
+    const year2050 = 2524608000; // 2050-01-01 的Unix时间戳
+    
+    if (numValue >= year2000 && numValue <= year2050) {
+      console.log(`Parsed numeric timestamp ${timestampStr} to ${numValue}`);
+      return numValue;
+    } else if (numValue >= year2000 * 1000 && numValue <= year2050 * 1000) {
+      // 可能是毫秒级时间戳
+      const timestamp = Math.floor(numValue / 1000);
+      console.log(`Converted millisecond timestamp ${timestampStr} to ${timestamp}`);
+      return timestamp;
+    }
   }
   
   // 如果不匹配预期格式，尝试标准Date解析（兼容旧格式）
-  return Math.floor(new Date(timestampStr).getTime() / 1000);
+  try {
+    const timestamp = Math.floor(new Date(timestampStr).getTime() / 1000);
+    
+    // 检查解析结果是否合理
+    if (isNaN(timestamp)) {
+      console.warn(`Failed to parse timestamp: ${timestampStr}, using current time`);
+      return Math.floor(Date.now() / 1000);
+    }
+    
+    console.log(`Fallback parsing of ${timestampStr} to ${timestamp}`);
+    return timestamp;
+  } catch (error) {
+    console.error(`Error parsing timestamp: ${timestampStr}`, error);
+    return Math.floor(Date.now() / 1000);
+  }
 }
 
 /**
@@ -87,17 +123,88 @@ export const parseTimestamp = (timestampStr: string): number => {
  * @returns ChartData[]
  */
 export const transformKlineData = (klineData: KlineData[]): ChartData[] => {
-  return klineData
-    .map(item => ({
-      // 将字符串时间戳转换为秒级 Unix 时间戳
-      time: parseTimestamp(item.timestamp),
-      open: item.open,
-      high: item.high,
-      low: item.low,
-      close: item.close
-    }))
-    .filter(item => !isNaN(item.time)) // 过滤掉无效时间
-    .sort((a, b) => a.time - b.time)   // 确保按时间升序排序
+  if (klineData.length <= 0) {
+    console.warn('Empty klineData array received!');
+    return [];
+  }
+  
+  const transformed: ChartData[] = klineData
+    .map(item => {
+      try {
+        // 优先使用timestamp字段，如果不存在则使用date字段
+        const timestampStr = item.timestamp || item.date;
+        
+        if (!timestampStr) {
+          console.warn('Missing timestamp and date in data point:', item);
+          return null;
+        }
+        
+        // 确保时间戳是整数
+        let timeValue = Math.floor(parseTimestamp(timestampStr));
+        
+        // 检查时间戳是否合理（2000年到2050年之间）
+        const year2000 = 946684800; // 2000-01-01 的Unix时间戳
+        const year2050 = 2524608000; // 2050-01-01 的Unix时间戳
+        
+        if (timeValue < year2000 || timeValue > year2050) {
+          console.warn(`Suspicious timestamp value: ${timeValue}, original: ${timestampStr}`);
+          // 如果时间戳不合理，尝试修复（可能是毫秒级时间戳）
+          if (timeValue > year2050 * 1000) {
+            timeValue = Math.floor(timeValue / 1000);
+            console.log(`Converted to seconds: ${timeValue}`);
+          }
+        }
+        
+        // 确保所有数值都是数字类型
+        const open = typeof item.open === 'string' ? parseFloat(item.open) : Number(item.open);
+        const high = typeof item.high === 'string' ? parseFloat(item.high) : Number(item.high);
+        const low = typeof item.low === 'string' ? parseFloat(item.low) : Number(item.low);
+        const close = typeof item.close === 'string' ? parseFloat(item.close) : Number(item.close);
+        
+        // 检查数据是否有效
+        if (isNaN(open) || isNaN(high) || isNaN(low) || isNaN(close) || isNaN(timeValue)) {
+          console.warn('Invalid data point:', {
+            original: item,
+            parsed: { time: timeValue, open, high, low, close }
+          });
+          return null;
+        }
+        
+        return {
+          time: timeValue,
+          open,
+          high,
+          low,
+          close
+        };
+      } catch (error) {
+        console.error('Error processing data point:', item, error);
+        return null;
+      }
+    })
+    .filter((item): item is ChartData => item !== null && 
+                   !isNaN(item.time) && 
+                   item.open !== undefined && 
+                   item.high !== undefined && 
+                   item.low !== undefined && 
+                   item.close !== undefined &&
+                   !isNaN(item.open) &&
+                   !isNaN(item.high) &&
+                   !isNaN(item.low) &&
+                   !isNaN(item.close) &&
+                   // 确保价格数据合理
+                   item.high >= item.low &&
+                   item.high >= 0 &&
+                   item.low >= 0
+    ) // 过滤掉无效时间和数据
+    .sort((a, b) => a.time - b.time);   // 确保按时间升序排序
+  
+  // 如果转换后的数据为空，记录警告
+  if (transformed.length === 0) {
+    console.error('No valid data after transformation! All data was filtered out.');
+  }
+  
+  return transformed;
 }
 
 /**
@@ -105,13 +212,80 @@ export const transformKlineData = (klineData: KlineData[]): ChartData[] => {
  * @param klineData - 原始 K 线数据
  * @returns VolumeData[]
  */
-export const transformVolumeData = (klineData: KlineData[]): VolumeData[] => {
-  return klineData.map(item => ({
-    // 将字符串时间戳转换为秒级 Unix 时间戳
-    time: parseTimestamp(item.timestamp),
-    value: item.volume,
-    color: item.open <= item.close ? '#26a69a' : '#ef5350'
-  })).filter(item => !isNaN(item.time)) // 过滤掉无效时间
+export const transformVolumeData = (klineData: KlineData[]): VolumeData[] => {  
+  if (klineData.length === 0) {
+    console.warn('Empty klineData array received for volume data!');
+    return [];
+  }
+  
+  const transformed: VolumeData[] = klineData
+    .map(item => {
+      try {
+        // 优先使用timestamp字段，如果不存在则使用date字段
+        const timestampStr = item.timestamp || item.date;
+        
+        if (!timestampStr) {
+          console.warn('Missing timestamp and date in volume data point:', item);
+          return null;
+        }
+        
+        // 确保时间戳是整数
+        let timeValue = Math.floor(parseTimestamp(timestampStr));
+        
+        // 检查时间戳是否合理（2000年到2050年之间）
+        const year2000 = 946684800; // 2000-01-01 的Unix时间戳
+        const year2050 = 2524608000; // 2050-01-01 的Unix时间戳
+        
+        if (timeValue < year2000 || timeValue > year2050) {
+          console.warn(`Suspicious timestamp value for volume: ${timeValue}, original: ${timestampStr}`);
+          // 如果时间戳不合理，尝试修复（可能是毫秒级时间戳）
+          if (timeValue > year2050 * 1000) {
+            timeValue = Math.floor(timeValue / 1000);
+          }
+        }
+        
+        // 确保成交量是数字类型
+        const volume = typeof item.volume === 'string' ? parseFloat(item.volume) : Number(item.volume);
+        
+        // 确保开盘价和收盘价是数字类型
+        const open = typeof item.open === 'string' ? parseFloat(item.open) : Number(item.open);
+        const close = typeof item.close === 'string' ? parseFloat(item.close) : Number(item.close);
+        
+        // 检查数据是否有效
+        if (isNaN(volume) || isNaN(timeValue) || isNaN(open) || isNaN(close)) {
+          console.warn('Invalid volume data point:', {
+            original: item,
+            parsed: { time: timeValue, value: volume, open, close }
+          });
+          return null;
+        }
+        
+        return {
+          time: timeValue,
+          value: volume,
+          color: open <= close ? '#26a69a' : '#ef5350'
+        };
+      } catch (error) {
+        console.error('Error processing volume data point:', item, error);
+        return null;
+      }
+    })
+    .filter((item): item is VolumeData => 
+      item !== null && 
+      !isNaN(item.time) && 
+      !isNaN(item.value) && 
+      item.value >= 0
+    ) // 过滤掉无效时间和数据
+    .sort((a, b) => a.time - b.time); // 确保按时间升序排序
+  
+  
+  if (transformed.length === 0) {
+    console.error('No valid volume data after transformation! All data was filtered out.');
+  } else {
+    console.log('Volume data sample (first item):', JSON.stringify(transformed[0]));
+  }
+  
+  return transformed;
 }
 
 /**
@@ -181,24 +355,36 @@ export const calculateMA = (data: any[], period: number) => {
 export const addChartTools = (mainChart: any, candleSeries: any) => {
   if (!mainChart) return
 
-  // 添加MA线
-  const ma5Series = mainChart.addLineSeries({
-    color: '#2196F3',
-    lineWidth: 1,
-    title: 'MA5',
-  })
-
-  const ma10Series = mainChart.addLineSeries({
-    color: '#E91E63',
-    lineWidth: 1,
-    title: 'MA10',
-  })
-
-  // 计算并设置MA数据
+  // 获取K线数据
   const data = candleSeries.data()
-  const ma5Data = calculateMA(data, 5)
-  const ma10Data = calculateMA(data, 10)
+  
+  // 如果数据为空或长度不足，不添加MA线
+  if (!data || data.length < 10) {
+    console.warn('Not enough data for MA calculation, skipping MA lines')
+    return
+  }
 
-  ma5Series.setData(ma5Data)
-  ma10Series.setData(ma10Data)
+  try {
+    // 添加MA线
+    const ma5Series = mainChart.addLineSeries({
+      color: '#2196F3',
+      lineWidth: 1,
+      title: 'MA5',
+    })
+
+    const ma10Series = mainChart.addLineSeries({
+      color: '#E91E63',
+      lineWidth: 1,
+      title: 'MA10',
+    })
+
+    // 计算并设置MA数据
+    const ma5Data = calculateMA(data, 5)
+    const ma10Data = calculateMA(data, 10)
+
+    ma5Series.setData(ma5Data)
+    ma10Series.setData(ma10Data)
+  } catch (error) {
+    console.error('Error adding chart tools:', error)
+  }
 } 

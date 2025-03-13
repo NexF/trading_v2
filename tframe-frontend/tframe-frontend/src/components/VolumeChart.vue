@@ -83,7 +83,7 @@
     // 当用户缩放或平移图表时，这个事件会被触发
     chart.timeScale().subscribeVisibleTimeRangeChange((timeRange) => {
       // 向父组件发送时间范围变化事件，用于同步主图的时间范围
-      if (timeRange) {
+      if (timeRange && timeRange.from !== null && timeRange.to !== null) {
         emit('timeRangeChanged', {
           from: timeRange.from as number,
           to: timeRange.to as number
@@ -110,11 +110,6 @@
     }
   }, { deep: true })
   
-  watch(() => props.crosshairPosition, (newPosition) => {
-    // Remove crosshair position setting for volume chart
-    // Volume chart should follow main chart's crosshair, not set its own
-    console.log('Crosshair position updated:', newPosition)
-  }, { deep: true })
   
   watch(() => props.data, (newData) => {
     if (volumeSeries) {
