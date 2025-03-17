@@ -66,8 +66,11 @@ go build -o bin/gateway cmd/gateway/main.go
 ### API 测试
 
 ```bash
-# 健康检查
-curl http://localhost:8080/ping
+# 获取 1 分钟 k 线数据（不复权）
+curl http://tframeapi.nex.cab/api/v1/klines?code=000001.sz&from=20240301&to=20250312&interval=1m
+
+# 获取一天级别的k线数据（不复权）
+curl http://tframeapi.nex.cab/api/v1/klines?code=000001.sz&from=20240301&to=20250312&interval=1d
 ```
 
 ## 开发
@@ -99,15 +102,8 @@ go test ./...
 
 ## 部署
 
-### Docker（待实现）
-
-```bash
-# 构建镜像
-docker build -t tframe-gateway .
-
-# 运行容器
-docker run -p 8080:8080 tframe-gateway
-```
+### Docker
+参考 DOCKER_README
 
 ## 贡献指南
 

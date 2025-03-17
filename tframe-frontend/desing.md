@@ -20,28 +20,24 @@
 
 ### 2.1 前端技术栈
 
-#### Vue 3 + TypeScript
+#### 前端整体架构 Vue 3 + TypeScript
 - 选型原因：
   - Vue 3的Composition API提供更好的代码组织和复用能力
   - TypeScript提供强类型支持，提高代码可维护性和开发效率
   - 适合中小型团队，学习曲线相对平缓
   - 与现有生态（Element Plus等）集成良好
 
-#### Element Plus
+#### UI 组件 Element Plus
 - 选型原因：
   - 完整的企业级UI组件库，组件丰富
   - 对Vue 3原生支持，TypeScript支持完善
   - 支持按需引入，可以优化打包体积
   - 提供完善的移动端适配方案
 
-#### ECharts
-- 选型原因：
-  - 功能强大，支持金融数据图表
-  - 可以处理大规模数据集
-  - 支持移动端交互
-  - 提供丰富的图表类型和自定义能力
+#### 金融数据展示：TradeView or Echarts
+待确定
 
-#### Monaco Editor
+#### 代码编辑器 Monaco Editor
 - 选型原因：
   - VS Code的网页版，提供熟悉的编码体验
   - 支持Python语法高亮和智能提示
@@ -64,13 +60,11 @@
 
 ### 2.2 后端技术栈
 
-#### FastAPI
+#### Golang + Gin
 - 选型原因：
-  - 高性能的异步Web框架
-  - 自动生成API文档（OpenAPI/Swagger）
-  - 原生支持类型提示和数据验证
-  - 与Python生态系统完美集成
-  - 适合构建RESTful API
+  - goroutine 原生支持协程
+  - 支持大并发
+  - 依赖管理方便
 
 #### MySQL + SQLAlchemy
 - 选型原因：
@@ -83,13 +77,6 @@
     - 强大的查询构建器
     - 与FastAPI集成良好
     - 支持数据库迁移
-
-#### Redis（可选）
-- 选型原因：
-  - 高性能的内存数据库，适合缓存
-  - 支持多种数据结构
-  - 可以用作会话存储
-  - 减轻主数据库压力
 
 #### Docker
 - 选型原因：

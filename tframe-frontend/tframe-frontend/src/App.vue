@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
 import tframe from './layouts/tframe.vue'
-import KLine from './components/KLine.vue'
 </script>
 
 <template>
-  <tframe title="我的应用">
+  <tframe title="K线图应用">
     <!-- 这里是主要内容 -->
     <div class="main-content">
-      <KLine />
+      <router-view />
     </div>
   </tframe>
 </template>
@@ -19,5 +17,4 @@ import KLine from './components/KLine.vue'
   height: calc(100vh - 60px); /* 减去头部导航的高度 */
   box-sizing: border-box;
 }
-
 </style>

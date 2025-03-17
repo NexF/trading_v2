@@ -2,6 +2,17 @@ import axios from 'axios'
 import type { AxiosResponse } from 'axios'
 
 // 定义接口返回的 K 线数据类型
+// 例子
+//   {
+//   "date": "20250303",
+//   "timestamp": "20250303 09:30:00",
+//   "open": 11.52,
+//   "high": 11.52,
+//   "low": 11.52,
+//   "close": 11.52,
+//   "volume": 3726,
+//   "amount": 4292352
+// }
 export interface KlineData {
   date: string
   timestamp: string

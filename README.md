@@ -1,19 +1,15 @@
-# 交易框架
+# tframe 交易框架
 
 ## 框架结构
+
+框架包括 前端(tframe-frontend)、后端网关(tframe-gateway)、策略实例(tframe-strategy)和其他微服务组成
+
+
 前后端分离架构
 ```
 graph LR
-    A[前端SPA] --> B[API Gateway]
-    B --> C[微服务1]
-    B --> D[微服务2]
-    B --> E[微服务3]
+    tframe-frontend[前端SPA] --> tframe-gateway[API Gateway]
+    tframe-gateway --> tframe-strategy[策略实例]
+    tframe-gateway --> service[微服务1]
+    tframe-strategy --> service[微服务2]
 ```
-
-### 框架入口
-
-### 框架初始化
-
-### 框架执行
-
-### 框架清理
