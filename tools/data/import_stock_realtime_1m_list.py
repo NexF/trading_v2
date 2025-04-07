@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/www/dk_project/dk_app/alpine/data/trading_v2/')
+sys.path.append('/www/dk_project/dk_app/alpine/data/trading_v2/tframe-strategy')
 import requests
 import pandas as pd
 from datetime import datetime, timedelta

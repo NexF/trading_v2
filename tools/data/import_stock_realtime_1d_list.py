@@ -3,7 +3,7 @@
 import pandas as pd
 import mysql.connector
 import sys
-sys.path.append('/www/dk_project/dk_app/alpine/data/trading_v2/')
+sys.path.append('/www/dk_project/dk_app/alpine/data/trading_v2/tframe-strategy')
 from datetime import datetime, timedelta
 from tframe.common.config_reader import ConfigReader
 from tframe.common.tushare_global import TushareGlobal
