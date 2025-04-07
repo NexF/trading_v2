@@ -44,3 +44,18 @@ class ConfigReader:
         return {
             'token': self._config['tushare']['token']
         }
+    
+    def get_redis_config(self) -> dict:
+        """获取Redis配置"""
+        return {
+            'host': self._config['redis']['host'],
+            'port': int(self._config['redis']['port']),
+            'password': self._config['redis']['password']
+        }
+
+    def get_model_config(self) -> dict:
+        """获取模型配置"""
+        return {
+            'base_url': self._config['model']['base_url'],
+            'api_key': self._config['model']['api_key']
+        }

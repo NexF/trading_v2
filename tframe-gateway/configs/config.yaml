@@ -23,6 +23,13 @@ database:
     max_open_conns: 100
     conn_max_lifetime: 3600
 
+  finance_news:
+    host: 172.18.0.5
+    port: 3306
+    user: tframe_readonly
+    password: T7AamWM7WVV6CJ01
+    dbname: tframe_finance_news
+
 log:
   level: info
   filename: ./logs/gateway.log

@@ -69,6 +69,13 @@ curl http://tframeapi.nex.cab/api/v1/klines?code=000001.sz&from=20240301&to=2025
 
 # 获取一天级别的k线数据（不复权）
 curl http://tframeapi.nex.cab/api/v1/klines?code=000001.sz&from=20240301&to=20250312&interval=1d
+
+# 获取24h财经新闻
+curl http://tframeapi.nex.cab/api/v1/finance-news?size=10
+
+# 获取大模型对财经新闻的分析结果
+curl http://tframeapi.nex.cab/api/v1/finance-news-analysis?size=10
+
 ```
 
 ## 开发

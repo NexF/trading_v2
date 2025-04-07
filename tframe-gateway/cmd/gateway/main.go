@@ -41,9 +41,14 @@ func main() {
 		log.Fatal("Failed to connect to 1d database:", err)
 	}
 
+	db_finance_news, err := mysql.NewMySQLConnection(cfg.Database.FinanceNews)
+	if err != nil {
+		log.Fatal("Failed to connect to finance news database:", err)
+	}
+
 	// 初始化Kline组件
 	klineHandler := wire.InitializeKlineComponents(db_stock1m, db_stock1d)
-
+	financeNewsHandler := wire.InitializeFinanceNewsComponents(db_finance_news)
 	// 设置路由
 	r := gin.Default()
 	// CORS配置
@@ -56,6 +61,7 @@ func main() {
 	v1 := r.Group("/api/v1")
 	{
 		routes.SetupKlineRoutes(v1, klineHandler)
+		routes.SetupFinanceNewsRoutes(v1, financeNewsHandler)
 	}
 
 	// 启动服务器

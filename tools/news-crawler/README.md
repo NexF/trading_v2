@@ -45,15 +45,6 @@ pip install requests mysql-connector-python
   - `save_raw_data`: 是否保存原始数据
   - `data_dir`: 数据存储目录
 
-- `DB_CONFIG`: MySQL数据库配置
-  - `host`: 数据库主机地址
-  - `port`: 数据库端口
-  - `database`: 数据库名
-  - `user`: 数据库用户名
-  - `password`: 数据库密码
-  - `charset`: 字符集
-  - `table_name`: 表名
-
 - `LOG_CONFIG`: 日志配置
   - `level`: 日志级别（INFO, DEBUG, WARNING, ERROR）
   - `file`: 日志文件名

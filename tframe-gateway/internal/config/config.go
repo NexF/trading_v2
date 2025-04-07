@@ -19,8 +19,9 @@ type ServerConfig struct {
 
 // DatabaseConfigs 包含多个数据库配置
 type DatabaseConfigs struct {
-	Stock1M *DatabaseConfig `mapstructure:"stock_1m"`
-	Stock1D *DatabaseConfig `mapstructure:"stock_1d"`
+	Stock1M     *DatabaseConfig `mapstructure:"stock_1m"`
+	Stock1D     *DatabaseConfig `mapstructure:"stock_1d"`
+	FinanceNews *DatabaseConfig `mapstructure:"finance_news"`
 }
 
 // DatabaseConfig 单个数据库的配置

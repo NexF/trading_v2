@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-新浪财经7x24小时实时直播数据爬虫
+新浪财经7x24小时实时直播数据爬虫 - Redis队列版
 每隔10秒获取新的财经消息并保存
 """
 
@@ -16,6 +16,7 @@ import sys
 import mysql.connector
 from mysql.connector import Error
 import argparse
+import redis
 from config import SINA_FINANCE_CONFIG, LOG_CONFIG
 sys.path.append('/www/dk_project/dk_app/alpine/data/trading_v2/tframe-strategy')
 from tframe.common.config_reader import ConfigReader
@@ -26,6 +27,13 @@ DB_USER = ConfigReader().get_db_root_config()['user']
 DB_PASSWORD = ConfigReader().get_db_root_config()['password']
 DB_DATABASE = "tframe_finance_news"
 DB_TABLE_NAME = "sina"
+
+REDIS_HOST = ConfigReader().get_redis_config()['host']
+REDIS_PORT = ConfigReader().get_redis_config()['port']
+REDIS_PASSWORD = ConfigReader().get_redis_config()['password']
+REDIS_DB = 0
+REDIS_QUEUE_KEY = "sina_finance_news"
+# 解析命令行参数
 def parse_arguments():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='新浪财经7x24小时实时直播数据爬虫')
@@ -68,6 +76,22 @@ logger = logging.getLogger("sina_finance_crawler")
 
 # 数据存储目录
 DATA_DIR = SINA_FINANCE_CONFIG["data_dir"]
+
+# 初始化Redis连接
+def get_redis_connection():
+    """获取Redis连接"""
+    try:
+        r = redis.Redis(
+            host=REDIS_HOST,
+            port=REDIS_PORT,
+            db=REDIS_DB,
+            password=REDIS_PASSWORD,
+            decode_responses=True  # 自动将响应解码为字符串
+        )
+        return r
+    except redis.RedisError as e:
+        logger.error(f"Redis连接错误: {e}")
+        return None
 
 def get_db_connection():
     """获取数据库连接"""
@@ -249,10 +273,51 @@ def save_raw_data(data):
     except Exception as e:
         logger.error(f"保存原始数据失败: {e}")
 
+# 将新闻发送到Redis队列，这里要实现根据消息 id 去重的逻辑
+redis_last_news_id = 0
+def send_to_redis_queue(news_list):
+    """将新闻数据发送到Redis队列"""
+    global redis_last_news_id
+    if not news_list:
+        return 0            
+
+    redis_conn = get_redis_connection()
+    if not redis_conn:
+        logger.error("无法连接到Redis，无法发送数据")
+        return 0
+    
+    queue_key = REDIS_QUEUE_KEY
+    sent_count = 0
+    
+    try:
+        # 使用pipeline批量操作提高性能
+        pipe = redis_conn.pipeline()
+        
+        for news in news_list:
+            # 获取最新的一条新闻的 id, 如果最新的一条新闻的 id 大于 redis 队列中的新闻 id, 则将新闻发送到 Redis 队列
+            if int(news["news_id"]) > redis_last_news_id:
+                # 将新闻数据转换为JSON字符串
+                news_json = json.dumps(news, ensure_ascii=False)
+                # 将数据推送到Redis列表的右侧
+                pipe.rpush(queue_key, news_json)
+                sent_count += 1
+        
+        # 执行所有命令
+        pipe.execute()
+        logger.info(f"成功将{sent_count}条新闻发送到Redis队列")
+        return sent_count
+    
+    except redis.RedisError as e:
+        logger.error(f"发送数据到Redis错误: {e}")
+        return 0
+    finally:
+        redis_conn.close()
+        redis_last_news_id = int(news_list[0]["news_id"])
+
 def main():
     """主函数"""
     logger.info(f"新浪财经7x24小时实时直播数据爬虫启动 (刷新间隔: {REFRESH_INTERVAL}秒)")
-    logger.info(f"数据库配置: {DB_HOST}:{DB_PORT}/{DB_DATABASE}")
+    logger.info(f"Redis队列: {REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
     logger.info(f"保存原始数据: {'是' if SAVE_RAW_DATA else '否'}")
     
     setup()
@@ -276,8 +341,11 @@ def main():
                     latest_id = int(news_list[0]["news_id"])
                     
                     inserted_count = save_to_db(news_list)
-                    logger.info(f"已保存 {inserted_count} 条新消息，最新消息ID: {latest_id}")
-                    
+                    logger.info(f"已保存 {inserted_count} 条新消息到数据库，最新消息ID: {latest_id}")
+
+                    # 发送到Redis队列
+                    sent_count = send_to_redis_queue(news_list)
+                    logger.info(f"已发送 {sent_count} 条新消息到Redis队列，最新消息ID: {latest_id}")
                     # 打印最新的几条消息
                     for i, news in enumerate(news_list[:3]):
                         logger.info(f"最新消息 {i+1}: {news['content'][:50]}...")
