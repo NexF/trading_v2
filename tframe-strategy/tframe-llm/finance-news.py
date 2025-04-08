@@ -19,6 +19,8 @@ from datetime import datetime
 from config import LOG_CONFIG, TAG_FILTER
 sys.path.append('/www/dk_project/dk_app/alpine/data/trading_v2/tframe-strategy')
 from tframe.common.config_reader import ConfigReader
+sys.path.append('/www/dk_project/dk_app/alpine/data/trading_v2/tools/pusher/wx-pusher')
+from wxpusher import WxPusher
 
 REDIS_HOST = ConfigReader().get_redis_config()['host']
 REDIS_PORT = ConfigReader().get_redis_config()['port']
@@ -106,13 +108,13 @@ def process_news(news):
                         "content": """
 用户将提供给你一段新闻内容，请你分析新闻内容，并提取其中的关键信息，以 JSON 的形式输出，输出的 JSON 需遵守以下的格式：
 {
-    "news_id": <新闻ID>,
+    "news_id": <原始新闻ID>,
     "sentiment": <新闻性质: 取值范围为[-2,2]，中性为 0, 利好为 1, 非常利好为 2, 利空为 -1, 非常利空为 -2>,
-    "importance": <新闻重要性: 取值范围为[0,4]，不重要（可能影响数个非权重股票，波动在 2% 左右）为 0, 一般（可能影响某个股票板块，波动在 5% 左右）为 1, 重要（可能影响一部分宽基指数，波动在 2% 左右）为 2, 非常重要（可能影响整个大盘的走势，波动在 5% 左右）为 3, 非常非常重要（可能在国际市场上产生深远的影响，波动在 10% 左右）为 4>,
+    "importance": <新闻重要性: 取值范围为[0,5]，不重要（可能影响数个非权重股票，波动在 2% 左右）为 0, 一般（可能影响某个股票板块，波动在 5% 左右）为 1, 重要（可能影响一部分宽基指数，波动在 2% 左右）为 2, 非常重要（可能影响整个大盘的走势，波动在 5% 左右）为 3, 非常非常重要（可能在国际市场上产生深远的影响，波动在 10% 左右）为 4, 极度重要（可能给全球经济带来衰退，未来数月波动在 50% 左右）为 5>,
     "content": <新闻原文>,
     "analysis": <详细解释为何得出利好或利空，以及利空或利好的程度。同时分析相关股票/行业/指数/国际形势的可能影响>,
     "publish_time": <新闻时间: 格式为 YYYY-mm-dd HH:MM:SS, 没有请填 null>,
-    "tags": <新闻tags>
+    "tags": <原始新闻tags>
 }
 """
                 },
@@ -358,6 +360,23 @@ def main():
                     print(result)
                     # 这里可以处理成功的结果，例如：
                     save_to_database(result)
+                    # 如果重要性大于等于3，则发送微信消息
+                    result_json = json.loads(result)
+                    if result_json.get("importance") >= 3:
+                        WxPusher.send_markdown(
+                            token="SPT_FGx2Aui5hc0boxPRvUinNCttGPb6",
+                            markdown_content=f"""
+# 重要事件预警
+
+**性质**: {result_json.get("sentiment")}
+
+**重要性**: {result_json.get("importance")}
+
+**内容**: {result_json.get("content")}
+
+**分析**: {result_json.get("analysis")}
+"""
+                        )
             except Exception as e:
                 logger.error(f"处理任务异常: {e}")
             
