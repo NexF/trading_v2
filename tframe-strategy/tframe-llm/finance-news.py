@@ -111,8 +111,9 @@ def process_news(news):
     "news_id": <原始新闻ID>,
     "sentiment": <新闻性质: 取值范围为[-2,2]，中性为 0, 利好为 1, 非常利好为 2, 利空为 -1, 非常利空为 -2>,
     "importance": <新闻重要性: 取值范围为[0,5]，不重要（可能影响数个非权重股票，波动在 2% 左右）为 0, 一般（可能影响某个股票板块，波动在 5% 左右）为 1, 重要（可能影响一部分宽基指数，波动在 2% 左右）为 2, 非常重要（可能影响整个大盘的走势，波动在 5% 左右）为 3, 非常非常重要（可能在国际市场上产生深远的影响，波动在 10% 左右）为 4, 极度重要（可能给全球经济带来衰退，未来数月波动在 50% 左右）为 5>,
+    "urgency": <新闻紧急性: 取值范围为[0,5]，迟缓（新闻可能造成的影响会在未来数年后逐渐显现）为 0, 缓慢（新闻可能造成的影响会在未来一年内逐渐显现）为 1, 一般（新闻可能造成的影响会在未来数月后逐渐显现）为 2, 较紧急（新闻可能造成的影响会在未来数周后逐渐显现）为 3, 非常紧急（新闻可能造成的影响会在未来数天后逐渐显现）为 4, 极度紧急（新闻可能造成的影响会立刻显现）为 5>,
     "content": <新闻原文>,
-    "analysis": <详细解释为何得出利好或利空，以及利空或利好的程度。同时分析相关股票/行业/指数/国际形势的可能影响>,
+    "analysis": <详细解释为何得出利好或利空，为何得出重要程度和紧急程度。同时分析相关股票/行业/指数/国际形势的可能影响>,
     "publish_time": <新闻时间: 格式为 YYYY-mm-dd HH:MM:SS, 没有请填 null>,
     "tags": <原始新闻tags>
 }
@@ -124,7 +125,7 @@ def process_news(news):
                 }
             ]
         )
-        
+
         result = completion.choices[0].message.content
         # result 删除首行的```json和尾行的```
         result = result.replace("```json", "").replace("```", "")
@@ -212,6 +213,7 @@ def save_to_database(result):
                 news_id = result_data.get('news_id', 0)
                 sentiment = result_data.get('sentiment', 0)
                 importance = result_data.get('importance', 0)
+                urgency = result_data.get('urgency', 0)
                 content = result_data.get('content', '')
                 analysis = result_data.get('analysis', '')
                 publish_time = result_data.get('publish_time')
@@ -224,8 +226,8 @@ def save_to_database(result):
                 # 插入数据
                 sql = f"""
                 INSERT INTO {DB_TABLE_NAME} 
-                (news_id, sentiment, importance, content, analysis, publish_time, tags, create_time, raw_json) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (news_id, sentiment, importance, urgency, content, analysis, publish_time, tags, create_time, raw_json) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 cursor.execute(
                     sql, 
@@ -233,6 +235,7 @@ def save_to_database(result):
                         news_id,
                         sentiment, 
                         importance, 
+                        urgency,
                         content[:2000],  # 限制长度避免超出数据库字段限制
                         analysis[:5000],  # 限制长度
                         publish_time,
@@ -245,7 +248,7 @@ def save_to_database(result):
                 # 提交事务
                 conn.commit()
                 
-                logger.info(f"数据已保存到数据库，sentiment={sentiment}, importance={importance}")
+                logger.info(f"数据已保存到数据库，sentiment={sentiment}, importance={importance}, urgency={urgency}")
                 return True
                 
         except mysql.connector.Error as e:
@@ -288,8 +291,9 @@ def init_database():
                 CREATE TABLE IF NOT EXISTS {DB_TABLE_NAME} (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     news_id INT NOT NULL,
-                    sentiment FLOAT NOT NULL DEFAULT 0,
+                    sentiment INT NOT NULL DEFAULT 0,
                     importance INT NOT NULL DEFAULT 0,
+                    urgency INT NOT NULL DEFAULT 0,
                     content TEXT NOT NULL,
                     analysis TEXT NOT NULL,
                     publish_time DATETIME NOT NULL,
@@ -298,6 +302,7 @@ def init_database():
                     raw_json TEXT NOT NULL,
                     INDEX idx_sentiment (sentiment),
                     INDEX idx_importance (importance),
+                    INDEX idx_urgency (urgency),
                     INDEX idx_publish_time (publish_time),
                     INDEX idx_create_time (create_time),
                     INDEX idx_news_id (news_id)
@@ -372,9 +377,13 @@ def main():
 
 **重要性**: {result_json.get("importance")}
 
+**紧急性**: {result_json.get("urgency")}
+
 **内容**: {result_json.get("content")}
 
 **分析**: {result_json.get("analysis")}
+
+**时间**: {result_json.get("publish_time")}
 """
                         )
             except Exception as e:
