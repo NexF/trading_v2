@@ -112,7 +112,6 @@ def process_news(news):
     "sentiment": <新闻性质: 取值范围为[-2,2]，中性为 0, 利好为 1, 非常利好为 2, 利空为 -1, 非常利空为 -2>,
     "importance": <新闻重要性: 取值范围为[0,5]，不重要（可能影响数个非权重股票，波动在 2% 左右）为 0, 一般（可能影响某个股票板块，波动在 5% 左右）为 1, 重要（可能影响一部分宽基指数，波动在 2% 左右）为 2, 非常重要（可能影响整个大盘的走势，波动在 5% 左右）为 3, 非常非常重要（可能在国际市场上产生深远的影响，波动在 10% 左右）为 4, 极度重要（可能给全球经济带来衰退，未来数月波动在 50% 左右）为 5>,
     "urgency": <新闻紧急性: 取值范围为[0,5]，迟缓（新闻可能造成的影响会在未来数年后逐渐显现）为 0, 缓慢（新闻可能造成的影响会在未来一年内逐渐显现）为 1, 一般（新闻可能造成的影响会在未来数月后逐渐显现）为 2, 较紧急（新闻可能造成的影响会在未来数周后逐渐显现）为 3, 非常紧急（新闻可能造成的影响会在未来数天后逐渐显现）为 4, 极度紧急（新闻可能造成的影响会立刻显现）为 5>,
-    "content": <新闻原文>,
     "analysis": <详细解释为何得出利好或利空，为何得出重要程度和紧急程度。同时分析相关股票/行业/指数/国际形势的可能影响>,
     "publish_time": <新闻时间: 格式为 YYYY-mm-dd HH:MM:SS, 没有请填 null>,
     "tags": <原始新闻tags>
@@ -129,7 +128,10 @@ def process_news(news):
         result = completion.choices[0].message.content
         # result 删除首行的```json和尾行的```
         result = result.replace("```json", "").replace("```", "")
-        return result
+        # 将result转换为JSON对象
+        result_json = json.loads(result)
+        result_json["content"] = content
+        return result_json
     
     except Exception as e:
         logger.error(f"处理新闻失败: {e}, 数据: {news}")
@@ -175,8 +177,7 @@ def save_to_database(result):
     
     try:
         # 解析结果（确保是JSON格式）
-        result_data = json.loads(result)
-        
+        result_str = json.dumps(result)
         # 获取数据库配置
         db_config = ConfigReader().get_db_root_config()
         
@@ -210,14 +211,14 @@ def save_to_database(result):
             # 创建游标
             with conn.cursor() as cursor:
                 # 提取数据
-                news_id = result_data.get('news_id', 0)
-                sentiment = result_data.get('sentiment', 0)
-                importance = result_data.get('importance', 0)
-                urgency = result_data.get('urgency', 0)
-                content = result_data.get('content', '')
-                analysis = result_data.get('analysis', '')
-                publish_time = result_data.get('publish_time')
-                tags = str(result_data.get('tags', ''))
+                news_id = result.get('news_id', 0)
+                sentiment = result.get('sentiment', 0)
+                importance = result.get('importance', 0)
+                urgency = result.get('urgency', 0)
+                content = result.get('content', '')
+                analysis = result.get('analysis', '')
+                publish_time = result.get('publish_time')
+                tags = str(result.get('tags', ''))
                 
                 # 如果publish_time是null或无效，使用当前时间
                 if not publish_time or publish_time == 'null':
@@ -241,7 +242,7 @@ def save_to_database(result):
                         publish_time,
                         tags[:500],
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        result  # 保存原始JSON结果
+                        result_str  # 保存原始JSON结果
                     )
                 )
                 
@@ -365,25 +366,26 @@ def main():
                     print(result)
                     # 这里可以处理成功的结果，例如：
                     save_to_database(result)
-                    # 如果重要性大于等于3，则发送微信消息
-                    result_json = json.loads(result)
-                    if result_json.get("importance") >= 3:
+                    # 如果重要性和紧急性大于等于3，则发送微信消息
+                    if result.get("importance") >= 3 and result.get("urgency") >= 3:
                         WxPusher.send_markdown(
                             token="SPT_FGx2Aui5hc0boxPRvUinNCttGPb6",
                             markdown_content=f"""
 # 重要事件预警
 
-**性质**: {result_json.get("sentiment")}
+**性质**: {result.get("sentiment")}
 
-**重要性**: {result_json.get("importance")}
+**重要性**: {result.get("importance")}
 
-**紧急性**: {result_json.get("urgency")}
+**紧急性**: {result.get("urgency")}
 
-**内容**: {result_json.get("content")}
+**内容**: {result.get("content")}
 
-**分析**: {result_json.get("analysis")}
+**分析**: {result.get("analysis")}
 
-**时间**: {result_json.get("publish_time")}
+**tags**: {result.get("tags")}
+
+**时间**: {result.get("publish_time")}
 """
                         )
             except Exception as e:
