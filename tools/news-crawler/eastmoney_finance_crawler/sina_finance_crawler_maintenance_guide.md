@@ -89,9 +89,9 @@ vim /etc/supervisor/conf.d/sina_finance_crawler.conf
 ```ini
 [program:sina_finance_crawler]
 ; 程序命令
-command=python3 /www/dk_project/dk_app/alpine/data/trading_v2/tools/news-crawler/src/sina_finance_crawler.py
+command=python3 /www/dk_project/dk_app/alpine/data/trading_v2/tools/news-crawler/src/sina_finance_crawler/sina_finance_crawler.py
 ; 程序的工作目录
-directory=/www/dk_project/dk_app/alpine/data/trading_v2/tools/news-crawler
+directory=/www/dk_project/dk_app/alpine/data/trading_v2/tools/news-crawler/sina_finance_crawler
 ; 运行用户
 user=root
 ; 自动启动
